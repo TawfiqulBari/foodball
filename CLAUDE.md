@@ -32,7 +32,14 @@ What exists now:
   Realtime leaderboard + live-score display + rank-change arrows (`rank_delta`).
   **M4 added:** result-moment overlays (`<ResultOverlay>`/`<ResultMoments>` — the
   reused `<FoodBallMascot>` + framer-motion + food-confetti, queued one-at-a-time,
-  reduced-motion aware), podium/row layout animation, and rivals pinning.
+  reduced-motion aware), podium/row layout animation, and rivals pinning. **Live
+  tournament added:** a green shadcn-style theme (light/dark tokens in `index.css` +
+  `tailwind.config.ts`), a first-run + bottom-nav **guide** (`More`/guide tab + a
+  Remotion `public/guide.mp4`), the animated **Match Day** stadium (`MatchPitch` +
+  `FieldPlayer` + `kits.ts` — accurate home kits for all 48 nations + a Croatia checker
+  pattern, plus a **live match clock**), a **commentary feed** (`CommentaryFeed`), the
+  three grace banners, and Admin "Launch tools" (grace windows + signup-domain allowlist
+  + commentary composer + celebration smoke test). Lucide icons; Plus Jakarta Sans + Inter.
 - **Database** — `supabase/migrations/` `0001_init.sql` (M1 schema + RLS + pick-lock
   trigger + outcome scoring), `0002_m2_markets_props_decay.sql` (all-market scoring,
   round-prop settlement, tournament decay scoring, revision-window trigger +
@@ -95,16 +102,19 @@ What exists now:
   (9:16, ~35s: headline → top-3 podium w/ avatars → climber/faller → outro).
 - Security control mapping in `docs/SECURITY.md`; how-to-run in `docs/RUNNING.md`.
 
-Remaining work is **deploy wiring, not features**: (1) the `pg_cron` schedule that
-calls `sync-results` every 5 min (the function + RPC exist and are tested; the cron
-entry is a deploy step — see the header of `sync-results/index.ts`); (2) a squads
-sync to populate `players_catalog` (until then Clean Plate / Top Chef / Golden Boot
-pickers stay empty, and Top Chef / awards are settled from admin-entered data).
-Tournament settlement (champion/finalists/awards) and knockout ET/penalty winners
-are **admin-entered** (the API poll never overwrites them — manual always wins).
-Optional polish: `lottie-react` is uninstalled — M4's celebrations use framer-motion
-+ the mascot + emoji/SVG confetti (spec §7.5's "flying-food confetti" reading); drop
-in LottieFiles JSON later if desired.
+Live-ops state (June 2026): the league runs the **real WC2026** group stage —
+matches go live at kickoff (`foodball-auto-live`) and **self-settle from openfootball**
+(`foodball-openfootball-sync`, `0014`), both token-free; **admin entry is the instant,
+authoritative override** (always wins). Sign-ups are gated to an email-domain allowlist
+(`0015`). Genuinely remaining: (1) **knockout fixtures** (the importer does the 72 group
+games; knockouts are placeholders until teams are decided, and need ET/penalty winner
+logic — admin-entered for now); (2) a **squads sync** to populate `players_catalog`
+(until then Clean Plate / Top Chef / Golden Boot pickers stay empty, and Top Chef /
+awards settle from admin-entered data); (3) optionally a `football-data.org` token for
+faster/live scores (spec §10 — free tier may not cover WC2026, so openfootball + manual
+stay the fallback). Tournament settlement (champion/finalists/awards) is admin-entered by
+design. Optional polish: `lottie-react` is uninstalled — M4's celebrations use
+framer-motion + the mascot + emoji/SVG confetti.
 
 ## What FoodBall is
 
@@ -131,7 +141,7 @@ The big picture that spans many files:
 - **Pick-locking is enforced server-side, never on the client clock.** A pick becomes immutable once its lock time passes, enforced via Postgres RLS + a `before insert/update` trigger comparing against the kickoff/round time stored in the DB. The M1 checklist explicitly requires that a post-kickoff pick is rejected even when the client UI is bypassed (test with a raw REST call).
 - **The "round" concept (MD1, MD2, MD3, R32, R16, QF, SF, F) drives lock and revision windows.** Only the round *keys* are hardcoded; all dates/fixtures are seeded from the API at setup time, not hardcoded. A round completes when all its matches have final results, which settles round props and opens the tournament-pick revision window.
 - **Three prediction tiers** (spec §4): per-match markets (lock at kickoff), per-round props (lock at round's first kickoff), and revisable tournament-long picks whose point value **decays** based on when the currently-held pick was last set. Decay values live in a `decay_schedule` DB table so the admin can tune them without code changes — read points from there, don't hardcode.
-- **Results sync pipeline** (spec §6). *Built:* `sync-fixtures` (daily upsert, idempotent by `api_match_id`) and `sync-results` (polls scores → the `fb_ingest_result` RPC, which auto-scores a match the instant it flips to `finished` — no admin action — and cascades into round-prop settlement via `fb_score_match`/`fb_score_round`). Admin manual entry via `fb_admin_set_result`; tournament-long picks settle via `fb_admin_set_tournament_result`. **Manual always wins over API** — `fb_ingest_result` skips a match whose `result_source='manual'` and `status='finished'`. *Deploy step (not code):* the `pg_cron` entry that calls `sync-results` every 5 min — see `sync-results/index.ts`.
+- **Results sync pipeline** (spec §6). *Built:* `sync-fixtures` (daily upsert, idempotent by `api_match_id`) and `sync-results` (polls scores → the `fb_ingest_result` RPC, which auto-scores a match the instant it flips to `finished` — no admin action — and cascades into round-prop settlement via `fb_score_match`/`fb_score_round`). Admin manual entry via `fb_admin_set_result`; tournament-long picks settle via `fb_admin_set_tournament_result`. **Manual always wins over API** — `fb_ingest_result` skips a match whose `result_source='manual'` and `status='finished'`. *Live, token-free:* on the self-hosted stack two pg_cron jobs run the loop with no API token — `foodball-auto-live` (`0010`) flips a match to `live` at its real kickoff, and `foodball-openfootball-sync` (`0014`) settles finished group matches from openfootball via `fb_ingest_result`. The `sync-results` Edge Function + its `foodball-sync-results` cron remain the path for a `football-data.org` token (and on hosted Supabase, where the in-DB `http` extension isn't available).
 - **RLS visibility rule:** everyone can read everything *after* lock time (it's a social game), but a pick is visible only to its owner *before* its lock time (prevents copying). Inserts/updates are own-rows-only and only before lock; `is_admin` bypasses.
 
 ## Validation & testing

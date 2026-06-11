@@ -7,10 +7,10 @@ _Last updated: 2026-06-11 (live tournament session) · branch `main`_
 **All five milestones (M1–M5) are built and live, and the league is running on
 real World Cup 2026 fixtures at https://foodball.tawfiqulbari.work.** This session
 took it from demo data to the real, in-progress tournament: real fixtures, a
-token-free auto-live pipeline, three late-launch grace windows, a green
-professional theme, an in-app guide, live commentary, accurate national-team
-jerseys, and a live match clock. Authoritative scoring/locking still lives in
-Postgres; the client never computes points.
+token-free auto-live + openfootball auto-settle pipeline, three late-launch grace
+windows, a green professional theme, an in-app guide, live commentary, accurate
+national-team jerseys, a live match clock, and a signup domain allowlist.
+Authoritative scoring/locking still lives in Postgres; the client never computes points.
 
 ## Live deployment
 
@@ -71,15 +71,17 @@ docker exec -i supabase_db_foodball psql -U postgres -d postgres \
 ```
 
 Caveats for the public surface:
-- **Signups are open** (`enable_signup = true`) — anyone with the URL can register.
-  Lock down (disable signups once colleagues join, or add a domain allowlist) before
-  sharing widely.
-- **Live scores need a source.** `foodball-auto-live` makes matches go *live* on time
-  with no token, but **scores** are admin-entered for now (Admin → set result → fires
-  goal commentary, cheer/cry overlays, and scoring). The `sync-results` cron exists but
-  is inert until a `football-data.org` token is set — and per spec §10 that free tier
-  may not cover WC2026, so manual/openfootball stay the fallback. A long-running match
-  left `live` is normal; the admin finishes it by entering the final score.
+- **Signups are gated** to an email-domain allowlist (`0015`) — seeded `infosonik.com`,
+  managed in Admin → Launch tools. Safe to share the URL; add other work domains there
+  as needed. (Fail-open if the allowlist is ever emptied.)
+- **Live scores are automated but lag.** `foodball-auto-live` flips matches live at
+  kickoff and `foodball-openfootball-sync` (`0014`) self-settles finished group matches
+  from openfootball — both token-free. But openfootball's volunteer feed lags real time
+  (and the 2026 file is fixtures-only until results are published), so **admin entry is
+  the instant, authoritative path** (Admin → set result → goal commentary + overlays +
+  scoring; always wins). A match left `live` for a while is normal — finish it by
+  entering the score. A `football-data.org` token could add faster scores via
+  `sync-results`, but its free tier may not cover WC2026.
 - SMTP is off (password-reset email disabled; signup works).
 
 ## Milestones & commits
@@ -104,9 +106,14 @@ Caveats for the public surface:
   finished match is never pickable (incl. the audited future-kickoff edge); forged
   `points_awarded` is neutralized on INSERT; client `points_awarded` UPDATE rejected;
   the three grace windows are independent.
+- **`supabase/tests/m_openfootball_sync_test.sql`** (new) — a published openfootball
+  score self-settles + scores a match with no admin action; a manual result is never
+  overwritten. Green on the live stack.
 - **Adversarial audit of `0011`/`0013`** (8-agent workflow): 2 reproduced LOW bugs,
   both fixed in `0013`; all other lenses (fairness off-path, cross-grace, NULL/idempotency,
   privilege, cascade cleanup, scorer annotation) passed.
+- **Signup allowlist** (`0015`) verified on the live auth API: `@gmail.com` rejected,
+  `@infosonik.com` accepted.
 - **Recap** — `recap/out/recap-MD2.mp4` rendered earlier (M5).
 
 > ⚠️ The `core_loop_test.sql` / `m2` / `m3` suites reference `SEED-*` fixtures that
@@ -162,7 +169,7 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
 
 ## Notes for the next session
 
-- Migrations are additive and numbered (`0001`→`0013`); never edit an applied one in
+- Migrations are additive and numbered (`0001`→`0015`); never edit an applied one in
   place. Apply new ones to the live CLI stack with
   `docker exec -i supabase_db_foodball psql -U postgres -d postgres -f -` and register
   the version in `supabase_migrations.schema_migrations`.

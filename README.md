@@ -29,7 +29,9 @@ Chain**, and the winner eats free. ~6 weeks of fun, then archive.
 - **Live everything** — a Realtime leaderboard with rank-change arrows, live scores,
   result-moment celebration overlays, an animated **Match Day** stadium (avatars in
   team kits on their picked side, cheering/crying on goals) with a live match clock,
-  and a live commentary feed.
+  and a live commentary feed. Token-free **auto-live** (matches go live at kickoff) +
+  **auto-settle** (finished matches settle themselves from openfootball), with admin
+  entry as the instant, authoritative override.
 - **The fun layer** — DiceBear avatars, an installable PWA, a first-run "How to play"
   guide (+ a Remotion animated guide), and an optional Remotion **recap** video.
 - **$0 infra** — Vite + React 18 + TypeScript (strict) + Tailwind on the front; Supabase
@@ -73,12 +75,14 @@ anyone else's data). High level:
    `.gitignore` keeps `.env*` and `secrets/` out of git.
 3. **Frontend** — `npm install && npm run build`, then host the static build anywhere
    (Vercel / Netlify free tiers, or behind nginx like the reference deploy).
-4. **Fixtures & results** — import fixtures (openfootball is keyless and free), and
-   enter results in the Admin screen as matches finish (which fires commentary +
-   celebration overlays + scoring). An optional `football-data.org` token can automate
-   scores; per the spec its free tier may not cover WC2026, so manual entry always works.
-5. **Before sharing** — make yourself admin, and lock down open signups (or add a
-   domain allowlist) once your colleagues have joined.
+4. **Fixtures & results** — import fixtures (openfootball is keyless and free; see
+   `scripts/import-real-fixtures.mjs`). Matches go live at kickoff and self-settle from
+   openfootball once it publishes a final, both token-free — or enter results in the
+   Admin screen (instant; fires commentary + overlays + scoring; always wins). An
+   optional `football-data.org` token can add faster scores (free tier may not cover WC2026).
+5. **Before sharing** — make yourself admin, then set the **signup email-domain
+   allowlist** (Admin → Launch tools → "Who can sign up") so only your colleagues can
+   register. It's enforced server-side and ships seeded with one domain.
 
 Full self-host runbook (single origin behind nginx + Let's Encrypt) →
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
