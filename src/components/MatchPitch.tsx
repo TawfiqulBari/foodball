@@ -1,7 +1,26 @@
+import { useEffect, useState } from 'react'
 import type { Team } from '../lib/database.types'
 import type { Picker, Side } from '../lib/matchField'
 import { kitFor, drawKit } from '../lib/kits'
 import { FieldPlayer, type PlayerState } from './FieldPlayer'
+
+/** Approximate live match clock from kickoff (we have no minute-by-minute feed):
+ *  the running match minute, clamped to 90+'. Ticks every 10s so it stays current. */
+function LiveMinute({ kickoff }: { kickoff: string }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 10_000)
+    return () => clearInterval(id)
+  }, [])
+  const mins = Math.floor((now - new Date(kickoff).getTime()) / 60_000)
+  if (Number.isNaN(mins)) return null
+  const label = mins >= 90 ? "90+'" : `${Math.max(1, mins)}'`
+  return (
+    <span className="ml-1 rounded-md bg-black/30 px-1.5 py-0.5 text-[11px] font-display tabular-nums text-white" aria-label="match clock">
+      {label}
+    </span>
+  )
+}
 
 /** A goal frame with net (CSS/SVG). `flip` mirrors it for the far end. */
 function Goal({ flip = false }: { flip?: boolean }) {
@@ -40,6 +59,7 @@ export function MatchPitch({
   live,
   finished,
   celebrating,
+  kickoff,
 }: {
   home?: Team
   away?: Team
@@ -49,6 +69,7 @@ export function MatchPitch({
   live: boolean
   finished: boolean
   celebrating: Side | null
+  kickoff?: string | null
 }) {
   const homeCode = home?.fifa_code ?? 'HOME'
   const awayCode = away?.fifa_code ?? 'AWAY'
@@ -73,9 +94,12 @@ export function MatchPitch({
           {awayCode} {away?.flag_emoji}
         </span>
         {live ? (
-          <span className="ml-1 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-body font-bold text-destructive-foreground animate-pulse">
-            ● LIVE
-          </span>
+          <>
+            <span className="ml-1 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-body font-bold text-destructive-foreground animate-pulse">
+              ● LIVE
+            </span>
+            {kickoff && <LiveMinute kickoff={kickoff} />}
+          </>
         ) : finished ? (
           <span className="ml-1 text-[11px] font-body text-muted-foreground">FT</span>
         ) : (

@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider'
 import {
   adminPostCommentary,
   adminSetLongshotGrace,
+  adminSetMatchPicksGrace,
   adminSetResult,
   adminSetRoundPropsGrace,
   adminSetTournamentResult,
@@ -12,6 +13,7 @@ import {
   adminUpdateDecay,
   fetchDecaySchedule,
   fetchLongshotGrace,
+  fetchMatchPicksGrace,
   fetchRoundPropsGrace,
   fetchMatches,
   fetchPlayers,
@@ -204,6 +206,17 @@ function LaunchTools({ onSaved }: { onSaved: (m: string) => void }) {
             load={fetchRoundPropsGrace}
             store={adminSetRoundPropsGrace}
             noun="Round-specials grace"
+            onSaved={onSaved}
+          />
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <GraceControl
+            label="Match-pick grace — open until"
+            help="While active, per-match markets (W/D/W, exact score, BTTS, O/U) stay open past kickoff for matches that are still playable. A finished match is never pickable."
+            load={fetchMatchPicksGrace}
+            store={adminSetMatchPicksGrace}
+            noun="Match-pick grace"
             onSaved={onSaved}
           />
         </div>

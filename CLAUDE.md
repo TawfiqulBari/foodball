@@ -6,12 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **M1 (core loop), M2 (full markets + avatars), M3 (auto-sync + realtime), M4 (the
 fun layer), and M5 (the optional Remotion recap) are all built and their acceptance
-checklists pass.** The product is feature-complete against the spec; remaining work
-is deploy wiring (see below), not features. When extending, keep verifying each
-milestone's acceptance checklist (spec §9) and re-running the test suites. See
-`session_status.md` for the latest run/verify snapshot + the deploy-wiring to-do. The canonical source of truth remains
-`plans/worldcup-league-claude-code-prompt.md` — read it before extending. Brand
-assets live in `plans/` and `public/branding/` (+ a `/branding/` copy the spec expects).
+checklists pass.** The product is feature-complete against the spec.
+
+**🔴 LIVE NOW** at https://foodball.tawfiqulbari.work on the **real World Cup 2026**
+(48 teams, 72 group-stage fixtures imported from openfootball; matches go live at
+their real kickoff via a token-free pg_cron). **Scores are admin-entered** until a
+results feed is wired (see `session_status.md` "Remaining"). The remaining work is
+that one data wiring + knockout fixtures, not features. When extending, keep verifying
+each milestone's acceptance checklist (spec §9) and re-running the test suites. See
+`session_status.md` for the latest run/verify snapshot + the live-ops details. The
+canonical source of truth remains `plans/worldcup-league-claude-code-prompt.md` — read
+it before extending. Brand assets live in `plans/` and `public/branding/` (+ a
+`/branding/` copy the spec expects).
 
 What exists now:
 - **Frontend** — Vite + React 18 + TS (strict) + Tailwind in `src/` (screens:
@@ -36,14 +42,34 @@ What exists now:
   `0004_sync_results_cron.sql` (pg_cron schedule — Supabase-only), and
   `0005_grants.sql` (the `anon`/`authenticated` table grants PostgREST needs — these
   live only in the harness's `02_grants.sql` otherwise, so a real Supabase deploy
-  needs this migration). `supabase/seed.sql` seeds reference data + the §4.3 decay
-  table. **Local Docker mounts the M2/M3 migrations as `01b_m2.sql` / `01c_m3.sql`
-  (see compose); the CLI/hosted stack applies all of `supabase/migrations/`.**
+  needs this migration). **Live-tournament migrations** (`0006`–`0013`):
+  `0006_commentary.sql` (auto kickoff/goal/FT lines + admin-posted lines, realtime),
+  `0007_longshot_grace.sql` / `0008_round_props_grace.sql` / `0011_match_picks_grace.sql`
+  (three admin-tunable late-launch grace windows on a singleton `public.settings` row;
+  each `fb_*_grace_active()` reads only its own column), `0009_cascade_pick_cleanup.sql`
+  (let picks cascade-delete when their match is removed), `0010_auto_live_window.sql`
+  (token-free pg_cron `foodball-auto-live` flips matches to `live` at kickoff),
+  `0012_live_atmosphere.sql` (pg_cron `foodball-live-atmosphere`: brand-voice colour
+  lines for live matches, always quoting the true score), `0013_pick_lock_hardening.sql`
+  (audit fixes: finished-match guard unconditional; client `points_awarded` neutralized
+  on INSERT for match + round-prop picks). `supabase/seed.sql` seeds reference data +
+  the §4.3 decay table. **Local Docker mounts the M2/M3 migrations as `01b_m2.sql` /
+  `01c_m3.sql` (see compose); the CLI/hosted stack applies all of `supabase/migrations/`.**
+  Apply a new migration to the live stack with
+  `docker exec -i supabase_db_foodball psql -U postgres -d postgres -f -` and register
+  it in `supabase_migrations.schema_migrations`.
 - **Server acceptance tests** — `core_loop_test.sql` (M1),
   `m2_markets_props_decay_test.sql` (M2: markets, props, decay, the revision-window
-  crux via RPC *and* raw insert), and `m3_autosync_test.sql` (M3: a simulated API
-  payload settles end-to-end with no admin action; a manual result is not overwritten).
-  **Run all three after any change to the schema or scoring.**
+  crux via RPC *and* raw insert), `m3_autosync_test.sql` (M3: a simulated API
+  payload settles end-to-end with no admin action; a manual result is not overwritten),
+  and `m_grace_test.sql` (the three grace windows + `0013` lock-hardening: grace ON
+  allows a post-kickoff still-playable pick, grace OFF locks it, a finished match is
+  never pickable incl. the future-kickoff edge, forged `points_awarded` neutralized on
+  INSERT, grace independence). **Run after any change to the schema or scoring.**
+  *Caveat:* `core_loop`/`m2`/`m3` need `SEED-*` fixtures that exist only in the Docker
+  test harness (`foodball-db-1`) — rebuild its volume (`down -v && up -d --build`) to
+  run them; `m_grace_test.sql` runs against the live CLI stack (`supabase_db_foodball`)
+  with `psql -f`.
 - **Decay math (mandatory Vitest)** — `src/lib/decay.ts` + `decay.test.ts` verify
   every cell of spec §4.3; `src/lib/scoring.ts` holds the fixed market/prop point
   values The Menu renders (mirrors the SQL scorer).

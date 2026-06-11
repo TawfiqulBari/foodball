@@ -26,6 +26,14 @@ function Jersey({ kit, code, size }: { kit: Kit; code: string; size: number }) {
       {kit.pattern === 'hoops' &&
         [15, 23, 31].map((y) => <rect key={y} x="14" y={y} width="20" height="3.2" fill={kit.secondary} opacity="0.95" />)}
       {kit.pattern === 'sash' && <path d="M14 13 L34 29 L34 33 L14 17 Z" fill={kit.secondary} opacity="0.95" />}
+      {kit.pattern === 'checker' &&
+        [0, 1, 2, 3, 4].flatMap((row) =>
+          [0, 1, 2, 3].map((col) =>
+            (row + col) % 2 === 0 ? (
+              <rect key={`${row}-${col}`} x={14 + col * 5} y={9 + row * 5.8} width="5" height="5.8" fill={kit.secondary} opacity="0.95" />
+            ) : null,
+          ),
+        )}
       {/* collar */}
       <path d="M20 6 H28 L25.5 10.5 H22.5 Z" fill={kit.secondary} stroke="rgba(0,0,0,0.2)" strokeWidth="0.5" />
       {/* squad code */}

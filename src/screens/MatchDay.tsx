@@ -160,6 +160,7 @@ export function MatchDay() {
             live={selected.status === 'live'}
             finished={selected.status === 'finished'}
             celebrating={celebrating}
+            kickoff={selected.kickoff}
           />
           <CommentaryFeed matchId={selected.id} />
         </div>

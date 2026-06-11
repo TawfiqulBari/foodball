@@ -242,6 +242,24 @@ export async function adminSetRoundPropsGrace(until: string | null): Promise<voi
   if (error) throw error
 }
 
+/** The match-pick launch-grace cut-off (ISO) or null. While now() < this, per-match
+ *  markets stay open past kickoff for matches that are still playable (live/upcoming);
+ *  a finished match is never pickable. Used because the league launched mid-round. */
+export async function fetchMatchPicksGrace(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('match_picks_grace_until')
+    .eq('id', true)
+    .maybeSingle()
+  if (error) throw error
+  return data?.match_picks_grace_until ?? null
+}
+
+export async function adminSetMatchPicksGrace(until: string | null): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_set_match_picks_grace', { p_until: until })
+  if (error) throw error
+}
+
 // ─── Profile (onboarding + avatar) ───────────────────────────────────────────
 
 export async function updateProfile(

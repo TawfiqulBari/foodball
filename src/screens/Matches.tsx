@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { roundComplete } from '../lib/matchField'
 import {
   fetchMatches,
+  fetchMatchPicksGrace,
   fetchMyPicks,
   fetchMyRoundProps,
   fetchPlayers,
@@ -38,16 +39,24 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
   const [picks, setPicks] = useState<Map<string, MatchPick>>(new Map())
   const [props, setProps] = useState<Map<Prop, RoundProp>>(new Map())
   const [propsGraceUntil, setPropsGraceUntil] = useState<string | null>(null)
+  const [matchGraceUntil, setMatchGraceUntil] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([fetchRounds(), fetchTeams(), fetchPlayers(), fetchRoundPropsGrace()])
-      .then(([r, t, p, grace]) => {
+    Promise.all([
+      fetchRounds(),
+      fetchTeams(),
+      fetchPlayers(),
+      fetchRoundPropsGrace(),
+      fetchMatchPicksGrace(),
+    ])
+      .then(([r, t, p, propsGrace, matchGrace]) => {
         setRounds(r)
         setTeams(t)
         setPlayers(p)
-        setPropsGraceUntil(grace)
+        setPropsGraceUntil(propsGrace)
+        setMatchGraceUntil(matchGrace)
         if (r.length && !r.some((x) => x.key === activeRound)) setActiveRound(r[0]!.key)
       })
       .catch((e) => setErr(String(e)))
@@ -57,6 +66,10 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
   const propsGraceActive = useMemo(
     () => (propsGraceUntil ? new Date(propsGraceUntil) > new Date() : false),
     [propsGraceUntil],
+  )
+  const matchGraceActive = useMemo(
+    () => (matchGraceUntil ? new Date(matchGraceUntil) > new Date() : false),
+    [matchGraceUntil],
   )
 
   useEffect(() => {
@@ -166,7 +179,14 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
           ) : (
             <div className="space-y-3">
               {matches.map((m) => (
-                <MatchCard key={m.id} match={m} teams={teams} picks={picksFor(m.id)} onPick={(mk, sel) => onPick(m.id, mk, sel)} />
+                <MatchCard
+                  key={m.id}
+                  match={m}
+                  teams={teams}
+                  picks={picksFor(m.id)}
+                  onPick={(mk, sel) => onPick(m.id, mk, sel)}
+                  graceActive={matchGraceActive}
+                />
               ))}
             </div>
           )}

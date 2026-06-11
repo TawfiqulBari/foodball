@@ -1,35 +1,57 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-06-11 · branch `main`_
+_Last updated: 2026-06-11 (live tournament session) · branch `main`_
 
 ## TL;DR
 
-**All five milestones (M1–M5) are built and their spec §9 acceptance checklists
-pass.** The product is feature-complete; what remains is **deploy wiring**, not
-features (see "Remaining" below). Authoritative scoring/locking lives in Postgres;
-the client never computes points.
+**All five milestones (M1–M5) are built and live, and the league is running on
+real World Cup 2026 fixtures at https://foodball.tawfiqulbari.work.** This session
+took it from demo data to the real, in-progress tournament: real fixtures, a
+token-free auto-live pipeline, three late-launch grace windows, a green
+professional theme, an in-app guide, live commentary, accurate national-team
+jerseys, and a live match clock. Authoritative scoring/locking still lives in
+Postgres; the client never computes points.
 
 ## Live deployment
 
 **Running publicly at https://foodball.tawfiqulbari.work** (self-hosted Supabase
 CLI stack on this box, single origin behind the host nginx + Let's Encrypt).
-Verified end-to-end over HTTPS: signup/login (no email confirmation), Matches (5
-demo fixtures), the leaderboard view, and reference data all load for a signed-in
-user.
+Verified end-to-end over HTTPS for a signed-in user: login, real fixtures, the live
+match + clock, the leaderboard, and the grace banners.
 
-What this session set up:
-- Supabase CLI stack (`supabase start`) — Postgres/Auth/Realtime/Storage/Studio/
-  Edge — with migrations `0001`–`0005` + `seed.sql` applied.
-- **`0005_grants.sql` (real bug fix):** the `anon`/`authenticated` table grants
-  previously lived only in the Docker harness (`02_grants.sql`), so a real Supabase
-  deploy hit "permission denied". Now a committed migration — applies everywhere.
-- **Security:** the Supabase CLI binds services to `0.0.0.0`; Docker's published
-  ports bypass `ufw`, so ports `54321–54327` are dropped on the public interface via
-  a persisted `DOCKER-USER` conntrack rule (`/etc/iptables/rules.v4`). nginx/localhost
-  still reach them. TLS cert auto-renews (certbot).
-- nginx vhost `foodball.conf` added (single origin: SPA on `:8090`, API proxied to
-  Kong `:54321`); **your other vhosts/containers were not touched.**
-- 5 demo MD1 fixtures inserted (`scripts/demo-matches.sql`, re-runnable).
+Foundation (earlier in the build):
+- Supabase CLI stack (`supabase start`) — Postgres/Auth/Realtime/Storage/Studio/Edge.
+- **`0005_grants.sql`:** `anon`/`authenticated` grants that previously lived only in
+  the Docker harness — now a migration so a real deploy doesn't hit "permission denied".
+- **Security:** the CLI binds services to `0.0.0.0` and Docker's published ports bypass
+  `ufw`, so ports `54321–54327` are dropped on the public interface via a persisted
+  `DOCKER-USER` conntrack rule (`/etc/iptables/rules.v4`). nginx/localhost still reach
+  them. TLS auto-renews (certbot).
+- nginx vhost `foodball.conf` (single origin: SPA on `:8090`, API proxied to Kong
+  `:54321`); **other vhosts/containers untouched.**
+
+### This session (demo → live tournament)
+- **Real fixtures.** `scripts/import-real-fixtures.mjs` emits idempotent SQL from
+  openfootball (keyless): all **48 teams** + **72 group-stage matches** with real
+  kickoff times, each group's 6 games mapped to MD1/MD2/MD3 by kickoff order; demo
+  fixtures removed; round start times set from real data. Knockouts deferred (teams TBD).
+- **Token-free auto-live** (`0010`): pg_cron `foodball-auto-live` (every minute) flips
+  a match to `live` at its real kickoff (firing the kickoff commentary). Never
+  auto-finishes — final scores stay admin/API (manual always wins).
+- **Three late-launch grace windows** (admin-tunable, default until 2026-06-14 23:59
+  +06; Admin → Launch tools): long shots (`0007`), round specials (`0008`), and
+  per-match markets (`0011`). Match-pick grace reopens **live/upcoming** matches past
+  kickoff but **never a finished one**.
+- **Pick-lock hardening** (`0013`, from the 0011 adversarial audit): finished-match
+  guard made unconditional; client-supplied `points_awarded` neutralized on INSERT.
+- **Live commentary** (`0006`) + **atmosphere ticker** (`0012`, pg_cron
+  `foodball-live-atmosphere`): real event lines (kickoff/goal/FT) plus token-free
+  brand-voice colour lines for live matches (always quoting the true score).
+- **UI**: green shadcn-style theme (light/dark) + professional type/icons; first-run
+  + bottom-nav **guide** (+ Remotion `guide.mp4`); accurate **home jerseys for all 48
+  nations** (`src/lib/kits.ts`, incl. a Croatia checker pattern); **live match clock**
+  in stadium mode; bigger/contrastier bottom nav; mobile polish.
+- **Admin** (`tawfiqul.bari@infosonik.com`) — `is_admin=true`.
 
 To make yourself admin after signing up:
 ```bash
@@ -41,9 +63,13 @@ Caveats for the public surface:
 - **Signups are open** (`enable_signup = true`) — anyone with the URL can register.
   Lock down (disable signups once colleagues join, or add a domain allowlist) before
   sharing widely.
-- The `sync-results` cron is scheduled (0004) but **inert** here: the function isn't
-  deployed and `FOOTBALL_DATA_TOKEN` / Vault secrets aren't set, so fixtures are
-  demo/admin-entered for now. SMTP is off (password-reset email disabled; signup works).
+- **Live scores need a source.** `foodball-auto-live` makes matches go *live* on time
+  with no token, but **scores** are admin-entered for now (Admin → set result → fires
+  goal commentary, cheer/cry overlays, and scoring). The `sync-results` cron exists but
+  is inert until a `football-data.org` token is set — and per spec §10 that free tier
+  may not cover WC2026, so manual/openfootball stay the fallback. A long-running match
+  left `live` is normal; the admin finishes it by entering the final score.
+- SMTP is off (password-reset email disabled; signup works).
 
 ## Milestones & commits
 
@@ -58,10 +84,26 @@ Caveats for the public surface:
 
 ## Verification (all green at HEAD)
 
-- `npm run build` — `tsc --noEmit` (strict, no `any`) + `vite build` + PWA SW (21 precache entries).
-- `npm test` — **65 Vitest** across `decay.test.ts`, `resultMoments.test.ts`, `format.test.ts`.
-- **SQL acceptance** on a fresh Dockerized Postgres — M1 + M2 + M3 suites all pass.
-- **Recap** — `recap/out/recap-MD2.mp4` rendered (data → DiceBear avatars → bundle → headless render).
+- `npm run lint` (`tsc --noEmit`, strict, no `any`) passes; production `web` image
+  builds and is deployed.
+- `npx vitest run` — **74 Vitest** across `decay.test.ts`, `resultMoments.test.ts`,
+  `matchField.test.ts`, `format.test.ts`.
+- **`supabase/tests/m_grace_test.sql`** (new) — runs green against the live CLI stack:
+  match-pick grace ON allows a post-kickoff still-playable pick; grace OFF locks it; a
+  finished match is never pickable (incl. the audited future-kickoff edge); forged
+  `points_awarded` is neutralized on INSERT; client `points_awarded` UPDATE rejected;
+  the three grace windows are independent.
+- **Adversarial audit of `0011`/`0013`** (8-agent workflow): 2 reproduced LOW bugs,
+  both fixed in `0013`; all other lenses (fairness off-path, cross-grace, NULL/idempotency,
+  privilege, cascade cleanup, scorer annotation) passed.
+- **Recap** — `recap/out/recap-MD2.mp4` rendered earlier (M5).
+
+> ⚠️ The `core_loop_test.sql` / `m2` / `m3` suites reference `SEED-*` fixtures that
+> live only in the **Docker test harness** (`foodball-db-1`), whose volume is stale
+> (predates `0002`) and which has no `SEED-*` rows on the CLI stack. To run them, rebuild
+> the harness volume: `docker compose -p foodball down -v && docker compose -p foodball up -d --build`
+> (recreates the local harness + SPA container — note it briefly restarts the live SPA).
+> `0013` only *tightens* the same locks those suites assert, so no logic regression.
 
 ## How to run
 
@@ -88,29 +130,36 @@ cd recap && npm install && npm run render -- --round=MD2   # → recap/out/recap
 See `docs/RUNNING.md` (local) and `docs/DEPLOYMENT.md` (public self-host) for the
 full procedures, and `CLAUDE.md` for architecture + conventions.
 
-## Remaining (deploy wiring, not features)
+## Remaining
 
-- **`pg_cron` schedule** for `sync-results` — now wired as migration
-  `0004_sync_results_cron.sql` (window-aware, secrets from Supabase Vault). It runs
-  only on a Supabase DB (pg_cron/pg_net/Vault), not the local stock-postgres harness.
-  To activate: deploy the function, set the `project_url` + `sync_secret` Vault
-  secrets, and `supabase migration up` — full runbook in `docs/DEPLOYMENT.md §5`.
-- **Squads sync** to populate `players_catalog` — until then the Clean Plate / Top
-  Chef / Golden Boot pickers are empty, and Top Chef + tournament awards settle from
-  **admin-entered** data. Tournament settlement (champion/finalists/awards) and
-  knockout ET/penalty winners are admin-entered by design (manual always wins).
-- **Manual checks worth doing before go-live:** PWA install on a real Android/iOS
-  device; the live `football-data.org` WC-2026 feed (spec §10 — no API token in this
-  environment; the openfootball + manual-entry fallbacks always work regardless).
-- **Optional polish:** `lottie-react` is uninstalled — M4 celebrations use
-  framer-motion + the mascot + emoji confetti; drop in LottieFiles JSON later if wanted.
+- **Live scores (the one real gap).** Either (a) provide a `football-data.org` token
+  and wire the `sync-results` cron for auto-scores (caveat: free tier may not cover
+  WC2026), (b) build a token-free **openfootball final-score sync** (settles matches
+  once openfootball records them — lags real time, no play-by-play), or (c) keep
+  **admin entry** (works now; instant goal commentary + overlays). Recommend (c) live +
+  optionally (b) for hands-off settling.
+- **Knockout fixtures** — added once group standings decide the teams (the importer
+  only does the 72 group games; knockout slots are placeholders in openfootball).
+- **Squads sync** to populate `players_catalog` — until then Clean Plate / Top Chef /
+  Golden Boot pickers are empty; Top Chef + awards settle from admin data.
+- **Lock down signups** before sharing widely (currently open).
+- **Optional polish:** `lottie-react` uninstalled (M4 uses framer-motion + mascot +
+  emoji confetti); the "Goals o/u 2.5" label could be reworded to "3+ goals?".
 
 ## Notes for the next session
 
-- Migrations are additive and numbered (`0001`→`0003`); never edit an applied one
-  in place. Local Docker mounts them as `01_init` / `01b_m2` / `01c_m3` before
-  `02_grants` (see `docker-compose.yml`).
+- Migrations are additive and numbered (`0001`→`0013`); never edit an applied one in
+  place. Apply new ones to the live CLI stack with
+  `docker exec -i supabase_db_foodball psql -U postgres -d postgres -f -` and register
+  the version in `supabase_migrations.schema_migrations`.
+- **pg_cron jobs** on the live stack: `foodball-sync-results` (every 5m, inert without
+  a token), `foodball-auto-live` (every 1m, token-free live flip), `foodball-live-atmosphere`
+  (every 2m, brand-voice colour lines for live matches).
+- **Three grace windows** share one `public.settings` row (singleton). Each
+  `fb_*_grace_active()` reads only its own column; admin setters are `fb_admin_set_*_grace`.
+- Redeploy the SPA after frontend changes:
+  `VITE_SUPABASE_URL=https://foodball.tawfiqulbari.work VITE_SUPABASE_ANON_KEY=<anon> docker compose -p foodball build web && docker compose -p foodball up -d --no-deps web`.
 - TS decay (`src/lib/decay.ts`) and the SQL `fb_decay_*` helpers both read
-  `decay_schedule` so they can't drift — re-run **both** Vitest and the SQL suites
-  after touching either.
+  `decay_schedule` so they can't drift — re-run **both** Vitest and the SQL suites after
+  touching either.
 - `vite-plugin-pwa` requires `workbox-build` pinned to `7.1.0` (7.3+ breaks its ESM `require`).
