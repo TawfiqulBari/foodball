@@ -74,7 +74,7 @@ export function Leaderboard() {
 
   return (
     <div className="px-4 pt-3 pb-24">
-      <h1 className="font-display text-2xl text-yellow flex items-center gap-2">
+      <h1 className="font-display text-2xl text-orange flex items-center gap-2">
         {COPY.leaderboard}
         {live && (
           <span className="rounded-full bg-tomato/20 px-2 py-0.5 text-[11px] font-body font-bold text-tomato animate-pulse">
@@ -84,9 +84,9 @@ export function Leaderboard() {
       </h1>
       {err && <p className="text-tomato text-sm font-body">{err}</p>}
       {loading ? (
-        <p className="mt-8 text-center font-body text-bunlight/60">Counting the courses…</p>
+        <p className="mt-8 text-center font-body text-ink/60">Counting the courses…</p>
       ) : rows.length === 0 ? (
-        <p className="mt-8 text-center font-body text-bunlight/60">{COPY.emptyLeaderboard}</p>
+        <p className="mt-8 text-center font-body text-ink/60">{COPY.emptyLeaderboard}</p>
       ) : (
         <LayoutGroup>
           <ul className="mt-3 space-y-2">
@@ -150,7 +150,7 @@ function Row({
       className={`flex items-center gap-3 rounded-card px-4 py-3 font-body ${
         rival ? 'ml-4' : ''
       } ${
-        me ? 'bg-yellow text-navy' : rival ? 'bg-bunlight/80 text-navy ring-1 ring-bun' : 'bg-bunlight/95 text-navy'
+        me ? 'bg-yellow text-ink ring-2 ring-orange' : rival ? 'bg-white text-ink shadow-sm ring-1 ring-bun' : 'bg-white text-ink shadow-sm'
       }`}
     >
       <span className="w-7 text-center font-display text-lg">

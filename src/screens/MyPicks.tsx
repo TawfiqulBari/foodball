@@ -77,12 +77,12 @@ export function MyPicks() {
 
   return (
     <div className="px-4 pt-3 pb-24">
-      <h1 className="font-display text-2xl text-yellow">My Picks</h1>
+      <h1 className="font-display text-2xl text-orange">My Picks</h1>
       {err && <p className="text-tomato text-sm font-body">{err}</p>}
 
       <div
         className={`mt-2 rounded-card px-4 py-2 text-sm font-body ${
-          windowOpen ? 'bg-lettuce/20 text-lettuce' : 'bg-navy/60 text-bunlight/70'
+          windowOpen ? 'bg-lettuce/20 text-lettuce' : 'bg-white text-ink/70 shadow-sm ring-1 ring-ink/10'
         }`}
       >
         {windowOpen
@@ -91,7 +91,7 @@ export function MyPicks() {
       </div>
 
       {loading ? (
-        <p className="mt-8 text-center font-body text-bunlight/60">Reading your order…</p>
+        <p className="mt-8 text-center font-body text-ink/60">Reading your order…</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {PICK_META.map((meta) => (
@@ -172,7 +172,7 @@ function TourneyPickRow({
   }
 
   return (
-    <li className="rounded-card bg-bunlight/95 text-navy p-4 font-body">
+    <li className="rounded-card bg-white text-ink shadow-sm p-4 font-body">
       <div className="flex items-center justify-between">
         <span className="font-display text-lg">{meta.label}</span>
         {settled ? (
@@ -191,13 +191,13 @@ function TourneyPickRow({
           <>
             Picked: <strong>{label(activePick.selection)}</strong>{' '}
             {loyal && (
-              <span className="ml-1 rounded-full bg-bun/30 px-2 text-[11px] font-bold text-navy" title="Never switched">
+              <span className="ml-1 rounded-full bg-bun/30 px-2 text-[11px] font-bold text-ink" title="Never switched">
                 🛡️ Loyal
               </span>
             )}
           </>
         ) : (
-          <span className="text-navy/50">{COPY.skippedLunch} — no pick yet.</span>
+          <span className="text-ink/50">{COPY.skippedLunch} — no pick yet.</span>
         )}
       </p>
 
@@ -209,14 +209,14 @@ function TourneyPickRow({
               value={draft}
               onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ''))}
               placeholder="e.g. 160"
-              className="min-h-tap w-28 rounded-lg px-3 text-navy"
+              className="min-h-tap w-28 rounded-lg bg-white px-3 text-ink ring-1 ring-ink/10 focus:ring-orange focus:outline-none"
               aria-label={meta.label}
             />
           ) : (
             <select
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="min-h-tap flex-1 rounded-lg bg-white px-3 text-navy text-sm"
+              className="min-h-tap flex-1 rounded-lg bg-white px-3 text-ink text-sm ring-1 ring-ink/10 focus:ring-orange focus:outline-none"
               aria-label={meta.label}
             >
               <option value="" disabled>
@@ -241,7 +241,7 @@ function TourneyPickRow({
             type="button"
             disabled={busy || !draft}
             onClick={() => void submit()}
-            className="min-h-tap rounded-lg bg-navy px-4 font-display text-yellow active:scale-95 disabled:opacity-40"
+            className="min-h-tap rounded-lg bg-orange px-4 font-display text-white active:scale-95 disabled:opacity-40"
           >
             {busy ? '…' : activePick ? 'Revise' : 'Set'}
           </button>
@@ -253,18 +253,18 @@ function TourneyPickRow({
           <button
             type="button"
             onClick={() => setShowHistory((v) => !v)}
-            className="text-xs font-bold text-teal underline underline-offset-2"
+            className="text-xs font-bold text-orange underline underline-offset-2"
           >
             {showHistory ? 'Hide history ▲' : `Revision history (${history.length}) ▼`}
           </button>
           {showHistory && (
-            <ol className="mt-1 space-y-0.5 text-xs text-navy/60">
+            <ol className="mt-1 space-y-0.5 text-xs text-ink/60">
               {history.map((h, i) => (
                 <li key={h.id}>
                   {i === 0 ? '➡️ ' : '• '}
                   {label(h.selection)} —{' '}
                   <span className="italic">{h.set_after_round ? `after ${h.set_after_round}` : 'pre-tournament'}</span>{' '}
-                  <span className="text-navy/40">{new Date(h.created_at).toLocaleDateString()}</span>
+                  <span className="text-ink/40">{new Date(h.created_at).toLocaleDateString()}</span>
                 </li>
               ))}
             </ol>

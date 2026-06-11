@@ -19,8 +19,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-navy flex items-center justify-center">
-        <p className="font-display text-yellow text-xl animate-pulse">Firing up the grill…</p>
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <p className="font-display text-orange text-xl animate-pulse">Firing up the grill…</p>
       </div>
     )
   }
@@ -29,11 +29,11 @@ export default function App() {
   if (profile && !isOnboarded(profile.avatar_config)) return <Onboarding />
 
   return (
-    <div className="min-h-screen bg-navy text-bunlight">
-      <header className="sticky top-0 z-10 bg-navy/95 backdrop-blur px-4 py-3 flex items-center gap-2 border-b border-teal/30">
-        <img src="/branding/foodball-icon.svg" alt="" className="h-8 w-8" />
-        <span className="font-display text-xl text-yellow">{COPY.appName}</span>
-        <span className="ml-auto font-body text-xs text-bunlight/50">{COPY.tagline}</span>
+    <div className="min-h-screen bg-cream text-ink">
+      <header className="sticky top-0 z-10 bg-gradient-to-r from-orange to-bun text-white px-4 py-3 flex items-center gap-2 shadow-md">
+        <img src="/branding/foodball-icon.svg" alt="" className="h-8 w-8 drop-shadow" />
+        <span className="font-display text-xl tracking-wide">{COPY.appName}</span>
+        <span className="ml-auto font-body text-xs text-white/85">{COPY.tagline}</span>
       </header>
 
       <main>

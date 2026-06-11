@@ -47,12 +47,12 @@ export function RoundPropsCard({
     `${teamLabel(m.home_team)} v ${teamLabel(m.away_team)} (underdog ${teamLabel(m.underdog_team)})`
 
   return (
-    <div className="rounded-card bg-navy border border-yellow/40 p-4 mb-3">
+    <div className="rounded-card bg-white text-ink shadow-sm ring-1 ring-orange/40 p-4 mb-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-yellow text-lg">Round specials 🍽️</h2>
+        <h2 className="font-display text-orange text-lg">Round specials 🍽️</h2>
         {locked && <span className="text-xs font-body text-tomato">Locked</span>}
       </div>
-      <p className="text-xs font-body text-bunlight/60">
+      <p className="text-xs font-body text-ink/60">
         Lock at the round's first kickoff. Settle when the round finishes.
       </p>
 
@@ -127,29 +127,29 @@ function PropRow({
 }) {
   const settled = current && current.points_awarded !== null
   return (
-    <div className="mt-3 border-t border-teal/30 pt-2">
+    <div className="mt-3 border-t border-ink/10 pt-2">
       <div className="flex items-center justify-between">
-        <span className="font-display text-bunlight">{title}</span>
+        <span className="font-display text-ink">{title}</span>
         {settled && (
           <span className={`text-xs font-bold ${(current!.points_awarded ?? 0) > 0 ? 'text-lettuce' : 'text-tomato'}`}>
             {(current!.points_awarded ?? 0) > 0 ? `+${current!.points_awarded}` : '+0'}
           </span>
         )}
       </div>
-      <p className="text-xs font-body text-bunlight/50">{hint}</p>
+      <p className="text-xs font-body text-ink/50">{hint}</p>
 
       {locked ? (
-        <p className="mt-1 text-sm font-body text-bunlight/80">
-          {current ? currentLabel(current.selection) : <span className="text-bunlight/40">{COPY.skippedLunch}</span>}
+        <p className="mt-1 text-sm font-body text-ink/80">
+          {current ? currentLabel(current.selection) : <span className="text-ink/40">{COPY.skippedLunch}</span>}
         </p>
       ) : options.length === 0 ? (
-        <p className="mt-1 text-xs font-body text-bunlight/40 italic">{emptyNote}</p>
+        <p className="mt-1 text-xs font-body text-ink/40 italic">{emptyNote}</p>
       ) : (
         <select
           disabled={busy}
           value={current?.selection ?? ''}
           onChange={(e) => onChoose(e.target.value)}
-          className="mt-1 w-full min-h-tap rounded-lg bg-bunlight px-3 text-navy font-body text-sm disabled:opacity-60"
+          className="mt-1 w-full min-h-tap rounded-lg bg-white px-3 text-ink font-body text-sm ring-1 ring-ink/10 focus:ring-orange disabled:opacity-60"
         >
           <option value="" disabled>
             {busy ? 'Saving…' : 'Choose…'}

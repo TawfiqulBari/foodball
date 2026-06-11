@@ -15,6 +15,10 @@ export default {
         lettuce: '#7CC243',
         tomato: '#E2504C',
         bunlight: '#FFF4DC',
+        // Bright warm theme (light): cream page, ink text, vibrant orange primary.
+        cream: '#FFF7ED',
+        ink: '#2B2018',
+        orange: '#F97316',
       },
       fontFamily: {
         display: ['"Luckiest Guy"', 'cursive'],

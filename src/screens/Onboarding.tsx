@@ -41,14 +41,14 @@ export function Onboarding() {
   }
 
   return (
-    <main className="min-h-screen bg-navy text-bunlight p-6">
+    <main className="min-h-screen bg-cream text-ink p-6">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="font-display text-3xl text-yellow text-center">Build your chef</h1>
-        <p className="mt-1 text-center font-body text-bunlight/70 text-sm">
+        <h1 className="font-display text-3xl text-orange text-center">Build your chef</h1>
+        <p className="mt-1 text-center font-body text-ink/70 text-sm">
           Pick a name and a face. {COPY.motto} 🍔
         </p>
 
-        <label htmlFor="display" className="mt-6 block text-sm text-bunlight/80 mb-1 font-body">
+        <label htmlFor="display" className="mt-6 block text-sm text-ink/80 mb-1 font-body">
           Display name
         </label>
         <input
@@ -57,7 +57,7 @@ export function Onboarding() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Chef Tawfiq"
           maxLength={40}
-          className="w-full min-h-tap rounded-lg px-4 text-navy font-body outline-none focus:ring-2 focus:ring-yellow"
+          className="w-full min-h-tap rounded-lg px-4 text-ink font-body bg-white ring-1 ring-ink/10 outline-none focus:ring-2 focus:ring-orange"
           autoComplete="nickname"
         />
 
@@ -71,7 +71,7 @@ export function Onboarding() {
           type="button"
           disabled={busy}
           onClick={() => void confirm()}
-          className="mt-5 w-full min-h-tap rounded-lg bg-yellow font-display text-navy text-lg active:scale-95 disabled:opacity-60"
+          className="mt-5 w-full min-h-tap rounded-lg bg-orange font-display text-white text-lg active:scale-95 disabled:opacity-60"
         >
           {busy ? 'Plating…' : "That's me! 🍔"}
         </button>

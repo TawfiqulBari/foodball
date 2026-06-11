@@ -110,10 +110,10 @@ export function MatchDay() {
   }
 
   return (
-    <div className="px-3 pt-3 pb-24">
-      <h1 className="font-display text-2xl text-yellow">Match Day 🏟️</h1>
-      <p className="font-body text-bunlight/60 text-sm">Where every chef stands. Goals make the stands erupt.</p>
-      {err && <p className="text-tomato text-sm font-body">{err}</p>}
+    <div className="px-2 pt-3 pb-24">
+      <h1 className="px-1 font-display text-2xl text-orange">Match Day 🏟️</h1>
+      <p className="px-1 font-body text-ink/60 text-sm">Where every chef stands. Goals make the stands erupt.</p>
+      {err && <p className="px-1 text-tomato text-sm font-body">{err}</p>}
 
       {/* Match tabs */}
       {tabs.length > 1 && (
@@ -128,7 +128,7 @@ export function MatchDay() {
                 type="button"
                 onClick={() => selectTab(m.id)}
                 className={`shrink-0 min-h-tap rounded-full px-3 text-xs font-display transition ${
-                  on ? 'bg-yellow text-navy' : 'bg-navy/40 text-bunlight/80'
+                  on ? 'bg-orange text-white' : 'bg-white text-ink ring-1 ring-ink/10'
                 }`}
               >
                 {h?.fifa_code ?? '?'} v {a?.fifa_code ?? '?'}
@@ -140,12 +140,12 @@ export function MatchDay() {
       )}
 
       {loading ? (
-        <p className="mt-8 text-center font-body text-bunlight/60">Walking out to the pitch…</p>
+        <p className="mt-8 text-center font-body text-ink/60">Walking out to the pitch…</p>
       ) : !selected ? (
-        <p className="mt-8 text-center font-body text-bunlight/60">{COPY.emptyMatches}</p>
+        <p className="mt-8 text-center font-body text-ink/60">{COPY.emptyMatches}</p>
       ) : (
         <div className="mt-3">
-          <p className="mb-2 text-center text-xs font-body text-bunlight/50">
+          <p className="mb-2 text-center text-xs font-body text-ink/50">
             {selected.group_letter ? `Group ${selected.group_letter} · ` : ''}
             {kickoffLabel(selected.kickoff)}
             {selected.status === 'scheduled' && ' · picks reveal at kickoff'}

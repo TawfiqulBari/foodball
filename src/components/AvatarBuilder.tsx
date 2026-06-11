@@ -15,13 +15,13 @@ export function AvatarBuilder({
   const set = (patch: Partial<AvatarConfig>) => onChange({ ...config, ...patch })
 
   return (
-    <div className="rounded-card bg-bunlight/95 text-navy p-4">
+    <div className="rounded-card bg-white text-ink shadow-sm ring-1 ring-ink/10 p-4">
       <div className="flex flex-col items-center">
         <Avatar name={name || 'Chef'} config={config as Record<string, unknown>} size={112} />
         <button
           type="button"
           onClick={() => set({ seedSalt: `${Date.now()}` })}
-          className="mt-3 min-h-tap rounded-full bg-navy px-5 font-display text-yellow active:scale-95"
+          className="mt-3 min-h-tap rounded-full bg-orange px-5 font-display text-white active:scale-95"
         >
           🎲 Randomize
         </button>
@@ -43,7 +43,7 @@ export function AvatarBuilder({
             aria-label={`background ${bg}`}
             onClick={() => set({ backgroundColor: bg })}
             className={`h-8 w-8 rounded-full border-2 transition active:scale-95 ${
-              config.backgroundColor === bg ? 'border-navy' : 'border-transparent'
+              config.backgroundColor === bg ? 'border-ink' : 'border-transparent'
             }`}
             style={{ backgroundColor: `#${bg}` }}
           />
@@ -65,7 +65,7 @@ export function AvatarBuilder({
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-4">
-      <p className="text-xs font-bold uppercase tracking-wide text-navy/50">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-ink/50">{label}</p>
       <div className="mt-1 flex flex-wrap items-center gap-2">{children}</div>
     </div>
   )
@@ -85,7 +85,7 @@ function Chip({
       type="button"
       onClick={onClick}
       className={`min-h-tap rounded-full px-4 text-sm font-display transition active:scale-95 ${
-        active ? 'bg-navy text-yellow' : 'bg-navy/10 text-navy hover:bg-navy/20'
+        active ? 'bg-orange text-white' : 'bg-ink/5 text-ink hover:bg-ink/10'
       }`}
     >
       {children}

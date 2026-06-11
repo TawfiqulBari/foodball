@@ -1,13 +1,36 @@
 import type { Team } from '../lib/database.types'
 import type { Picker, Side } from '../lib/matchField'
-import { jerseyColor } from '../lib/matchField'
+import { kitFor, drawKit } from '../lib/kits'
 import { FieldPlayer, type PlayerState } from './FieldPlayer'
 
-const DRAW_COLOR = '#6B7280' // neutral grey kit for draw-backers
+/** A goal frame with net (CSS/SVG). `flip` mirrors it for the far end. */
+function Goal({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 100 26"
+      className="mx-auto block h-7 w-3/5 max-w-[260px]"
+      preserveAspectRatio="none"
+      style={flip ? { transform: 'scaleY(-1)' } : undefined}
+      aria-hidden
+    >
+      {/* net mesh */}
+      {[30, 38, 46, 54, 62, 70].map((x) => (
+        <line key={x} x1={x} y1="6" x2={x} y2="24" stroke="#ffffff" strokeOpacity="0.25" strokeWidth="0.6" />
+      ))}
+      {[12, 18].map((y) => (
+        <line key={y} x1="26" y1={y} x2="74" y2={y} stroke="#ffffff" strokeOpacity="0.25" strokeWidth="0.6" />
+      ))}
+      {/* frame */}
+      <rect x="24" y="4" width="52" height="3" rx="1" fill="#fff" />
+      <rect x="24" y="4" width="3" height="21" rx="1" fill="#fff" />
+      <rect x="73" y="4" width="3" height="21" rx="1" fill="#fff" />
+    </svg>
+  )
+}
 
-/** The animated stadium for one match: home supporters up top, away at the
- *  bottom, draw-backers at the centre circle. Portrait layout → great on phones.
- *  `celebrating` drives the cheer/cry animation across both sides. */
+/** The animated stadium for one match (spec): a full-height vertical pitch with
+ *  goals top & bottom, home supporters defending the top, away the bottom, and
+ *  draw-backers at the centre circle. `celebrating` drives cheer/cry. */
 export function MatchPitch({
   home,
   away,
@@ -29,95 +52,81 @@ export function MatchPitch({
 }) {
   const homeCode = home?.fifa_code ?? 'HOME'
   const awayCode = away?.fifa_code ?? 'AWAY'
+  const homeKit = kitFor(homeCode)
+  const awayKit = kitFor(awayCode)
   const stateFor = (side: Side): PlayerState => {
     if (!celebrating || side === 'draw') return 'idle'
     return side === celebrating ? 'cheer' : 'cry'
   }
 
   return (
-    <div className="rounded-card overflow-hidden border border-teal/40 bg-navy">
-      {/* Scoreboard */}
-      <div className="flex items-center justify-center gap-4 bg-navy/80 px-3 py-2 font-display text-bunlight">
-        <span className="flex items-center gap-1 text-base">
+    <div className="rounded-card overflow-hidden shadow-lg ring-1 ring-ink/10 bg-white">
+      {/* Scoreboard — bright bar */}
+      <div className="flex items-center justify-center gap-3 bg-white px-3 py-2 font-display text-ink">
+        <span className="flex items-center gap-1 text-lg">
           {home?.flag_emoji} {homeCode}
         </span>
-        <span className="text-2xl text-yellow tabular-nums">
-          {scoreHome}<span className="px-1 text-bunlight/50">–</span>{scoreAway}
+        <span className="rounded-lg bg-ink px-3 py-0.5 text-2xl text-yellow tabular-nums">
+          {scoreHome}<span className="px-1 text-white/50">–</span>{scoreAway}
         </span>
-        <span className="flex items-center gap-1 text-base">
+        <span className="flex items-center gap-1 text-lg">
           {awayCode} {away?.flag_emoji}
         </span>
         {live ? (
-          <span className="ml-1 rounded-full bg-tomato/20 px-2 py-0.5 text-[10px] font-body font-bold text-tomato animate-pulse">
+          <span className="ml-1 rounded-full bg-tomato px-2 py-0.5 text-[10px] font-body font-bold text-white animate-pulse">
             ● LIVE
           </span>
         ) : finished ? (
-          <span className="ml-1 text-[11px] font-body text-bunlight/60">FT</span>
+          <span className="ml-1 text-[11px] font-body text-ink/60">FT</span>
         ) : (
           <span className="ml-1 text-[11px] font-body text-teal">warming up</span>
         )}
       </div>
 
-      {/* Pitch */}
+      {/* Pitch — fills the screen vertically; mowing stripes + goals give depth */}
       <div
-        className="relative px-2 py-3"
+        className="relative flex min-h-[62vh] flex-col md:min-h-[70vh]"
         style={{
           background:
-            'repeating-linear-gradient(180deg, #1f7a34 0px, #1f7a34 36px, #1c6f30 36px, #1c6f30 72px)',
+            'repeating-linear-gradient(180deg,#33a14a 0,#33a14a 7%,#2c8f41 7%,#2c8f41 14%)',
         }}
       >
-        {/* markings */}
-        <div className="pointer-events-none absolute inset-2 rounded-lg border-2 border-white/40" />
-        <div className="pointer-events-none absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 bg-white/40" />
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/40" />
+        {/* perimeter + halfway markings */}
+        <div className="pointer-events-none absolute inset-2 rounded-md border-2 border-white/45" />
+        <div className="pointer-events-none absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 bg-white/45" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/45" />
+        {/* soft depth vignette */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: 'radial-gradient(120% 60% at 50% 50%, transparent 55%, rgba(0,0,0,0.18) 100%)' }}
+        />
 
-        {/* HOME zone */}
-        <Zone label={`Backing ${home?.flag_emoji ?? ''} ${homeCode}`} count={sides.home.length}>
+        <Goal />
+        <Zone label={`${home?.flag_emoji ?? ''} ${homeCode}`} count={sides.home.length}>
           {sides.home.map((p) => (
-            <FieldPlayer
-              key={p.user_id}
-              name={p.display_name}
-              config={p.avatar_config}
-              teamColor={jerseyColor(homeCode)}
-              teamCode={homeCode}
-              state={stateFor('home')}
-            />
+            <FieldPlayer key={p.user_id} name={p.display_name} config={p.avatar_config} kit={homeKit} teamCode={homeCode} state={stateFor('home')} />
           ))}
         </Zone>
 
-        {/* DRAW (centre circle) */}
-        {sides.draw.length > 0 && (
-          <div className="relative my-1 flex flex-wrap items-center justify-center gap-2 py-1">
-            <span className="w-full text-center text-[10px] font-body font-bold uppercase tracking-wide text-white/70">
-              Calling a draw
-            </span>
-            {sides.draw.map((p) => (
-              <FieldPlayer
-                key={p.user_id}
-                name={p.display_name}
-                config={p.avatar_config}
-                teamColor={DRAW_COLOR}
-                teamCode="DRAW"
-                state="idle"
-                size={34}
-              />
-            ))}
-          </div>
-        )}
+        <div className="relative z-10 flex flex-wrap items-center justify-center gap-2 py-1">
+          {sides.draw.length > 0 && (
+            <>
+              <span className="w-full text-center text-[10px] font-body font-bold uppercase tracking-wide text-white/80 drop-shadow">
+                Calling a draw
+              </span>
+              {sides.draw.map((p) => (
+                <FieldPlayer key={p.user_id} name={p.display_name} config={p.avatar_config} kit={drawKit} teamCode="DRAW" state="idle" size={38} />
+              ))}
+            </>
+          )}
+        </div>
 
-        {/* AWAY zone */}
-        <Zone label={`Backing ${away?.flag_emoji ?? ''} ${awayCode}`} count={sides.away.length}>
+        <Zone label={`${away?.flag_emoji ?? ''} ${awayCode}`} count={sides.away.length}>
           {sides.away.map((p) => (
-            <FieldPlayer
-              key={p.user_id}
-              name={p.display_name}
-              config={p.avatar_config}
-              teamColor={jerseyColor(awayCode)}
-              teamCode={awayCode}
-              state={stateFor('away')}
-            />
+            <FieldPlayer key={p.user_id} name={p.display_name} config={p.avatar_config} kit={awayKit} teamCode={awayCode} state={stateFor('away')} />
           ))}
         </Zone>
+        <Goal flip />
       </div>
     </div>
   )
@@ -125,16 +134,16 @@ export function MatchPitch({
 
 function Zone({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
   return (
-    <div className="relative min-h-[110px] py-1">
-      <div className="mb-1 flex items-center justify-center gap-2">
-        <span className="rounded-full bg-black/30 px-2 py-0.5 text-[11px] font-display text-white">
+    <div className="relative z-10 flex flex-1 flex-col justify-center py-2">
+      <div className="mb-1 flex items-center justify-center">
+        <span className="rounded-full bg-black/35 px-3 py-0.5 text-xs font-display text-white shadow">
           {label} · {count}
         </span>
       </div>
       {count === 0 ? (
-        <p className="text-center text-[11px] font-body italic text-white/50">No takers yet</p>
+        <p className="text-center text-[11px] font-body italic text-white/60">No takers yet</p>
       ) : (
-        <div className="flex flex-wrap items-start justify-center gap-x-2 gap-y-3">{children}</div>
+        <div className="flex flex-wrap items-start justify-center gap-x-2 gap-y-2 px-1">{children}</div>
       )}
     </div>
   )

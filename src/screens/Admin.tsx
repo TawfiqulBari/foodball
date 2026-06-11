@@ -46,10 +46,10 @@ export function Admin() {
   const isKnockout = !['MD1', 'MD2', 'MD3'].includes(round)
 
   return (
-    <div className="px-4 pt-3 pb-24 font-body text-bunlight space-y-6">
+    <div className="px-4 pt-3 pb-24 font-body text-ink space-y-6">
       <div>
-        <h1 className="font-display text-2xl text-yellow">Admin · Kitchen pass</h1>
-        <p className="text-xs text-bunlight/60">Manual results always win over the API feed (spec §6.5).</p>
+        <h1 className="font-display text-2xl text-orange">Admin · Kitchen pass</h1>
+        <p className="text-xs text-ink/60">Manual results always win over the API feed (spec §6.5).</p>
         {msg && <p className="mt-2 text-lettuce text-sm">{msg}</p>}
       </div>
 
@@ -60,7 +60,7 @@ export function Admin() {
             type="button"
             onClick={() => setRound(r.key)}
             className={`shrink-0 min-h-tap rounded-full px-3 text-sm font-display ${
-              round === r.key ? 'bg-yellow text-navy' : 'bg-navy/40'
+              round === r.key ? 'bg-orange text-white' : 'bg-white text-ink ring-1 ring-ink/10'
             }`}
           >
             {r.key}
@@ -71,7 +71,7 @@ export function Admin() {
 
       {/* Results + underdog */}
       <section>
-        <h2 className="font-display text-lg text-yellow">Results &amp; underdogs — {round}</h2>
+        <h2 className="font-display text-lg text-orange">Results &amp; underdogs — {round}</h2>
         <ul className="mt-2 space-y-3">
           {matches.map((m) => (
             <AdminMatchRow
@@ -83,7 +83,7 @@ export function Admin() {
               onRefresh={refresh}
             />
           ))}
-          {matches.length === 0 && <li className="text-sm text-bunlight/50">No fixtures seeded for {round}.</li>}
+          {matches.length === 0 && <li className="text-sm text-ink/50">No fixtures seeded for {round}.</li>}
         </ul>
       </section>
 
@@ -162,35 +162,35 @@ function AdminMatchRow({
   }
 
   return (
-    <li className="rounded-card bg-bunlight/95 text-navy p-3">
+    <li className="rounded-card bg-white text-ink shadow-sm p-3">
       <div className="flex items-center justify-between text-sm">
         <span className="font-bold">
           {home?.flag_emoji} {home?.fifa_code} vs {away?.fifa_code} {away?.flag_emoji}
         </span>
-        <span className="text-xs text-navy/50">{kickoffLabel(match.kickoff)} · {match.status}</span>
+        <span className="text-xs text-ink/50">{kickoffLabel(match.kickoff)} · {match.status}</span>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <input aria-label={`${home?.fifa_code} score`} inputMode="numeric" value={h} onChange={(e) => setH(e.target.value)} className="w-12 min-h-tap rounded text-center" />
+        <input aria-label={`${home?.fifa_code} score`} inputMode="numeric" value={h} onChange={(e) => setH(e.target.value)} className="w-12 min-h-tap rounded text-center text-ink focus:ring-orange" />
         <span>–</span>
-        <input aria-label={`${away?.fifa_code} score`} inputMode="numeric" value={a} onChange={(e) => setA(e.target.value)} className="w-12 min-h-tap rounded text-center" />
+        <input aria-label={`${away?.fifa_code} score`} inputMode="numeric" value={a} onChange={(e) => setA(e.target.value)} className="w-12 min-h-tap rounded text-center text-ink focus:ring-orange" />
         {isKnockout && (
-          <select aria-label="Winner" value={winner} onChange={(e) => setWinner(e.target.value)} className="min-h-tap rounded text-sm">
+          <select aria-label="Winner" value={winner} onChange={(e) => setWinner(e.target.value)} className="min-h-tap rounded text-sm text-ink focus:ring-orange">
             <option value="">Winner…</option>
             <option value={String(match.home_team)}>{home?.fifa_code}</option>
             <option value={String(match.away_team)}>{away?.fifa_code}</option>
           </select>
         )}
-        <button type="button" disabled={busy} onClick={() => void save()} className="ml-auto min-h-tap rounded-lg bg-navy px-4 font-display text-yellow active:scale-95 disabled:opacity-60">
+        <button type="button" disabled={busy} onClick={() => void save()} className="ml-auto min-h-tap rounded-lg bg-orange px-4 font-display text-white active:scale-95 disabled:opacity-60">
           {busy ? 'Saving…' : 'Save & score'}
         </button>
       </div>
       <div className="mt-2 flex items-center gap-2 text-xs">
-        <span className="text-navy/50">Underdog (×2):</span>
+        <span className="text-ink/50">Underdog (×2):</span>
         <select
           aria-label="Underdog"
           value={match.underdog_team ? String(match.underdog_team) : ''}
           onChange={(e) => void setDog(e.target.value ? Number(e.target.value) : null)}
-          className="min-h-tap rounded text-sm"
+          className="min-h-tap rounded text-sm text-ink focus:ring-orange"
         >
           <option value="">none</option>
           <option value={String(match.home_team)}>{home?.fifa_code}</option>
@@ -237,18 +237,18 @@ function SettleRound({
 
   return (
     <section>
-      <h2 className="font-display text-lg text-yellow">Settle round — {round}</h2>
-      <p className="text-xs text-bunlight/60">Name the round&apos;s top scorer(s) for Top Chef, then settle Spice / Clean Plate / Top Chef.</p>
-      <div className="mt-2 rounded-card bg-bunlight/95 text-navy p-3">
-        <label className="text-xs font-bold uppercase text-navy/50">Top scorers (Top Chef)</label>
+      <h2 className="font-display text-lg text-orange">Settle round — {round}</h2>
+      <p className="text-xs text-ink/60">Name the round&apos;s top scorer(s) for Top Chef, then settle Spice / Clean Plate / Top Chef.</p>
+      <div className="mt-2 rounded-card bg-white text-ink shadow-sm p-3">
+        <label className="text-xs font-bold uppercase text-ink/50">Top scorers (Top Chef)</label>
         {players.length === 0 ? (
-          <p className="text-xs text-navy/40 italic mt-1">No squads synced — Top Chef will score 0 until players exist.</p>
+          <p className="text-xs text-ink/40 italic mt-1">No squads synced — Top Chef will score 0 until players exist.</p>
         ) : (
           <select
             multiple
             value={scorers.map(String)}
             onChange={(e) => setScorers([...e.target.selectedOptions].map((o) => Number(o.value)))}
-            className="mt-1 w-full rounded-lg text-navy text-sm h-28"
+            className="mt-1 w-full rounded-lg text-ink text-sm h-28 focus:ring-orange"
           >
             {players.map((p) => (
               <option key={p.id} value={String(p.id)}>
@@ -261,7 +261,7 @@ function SettleRound({
           <input type="checkbox" checked={complete} onChange={(e) => setComplete(e.target.checked)} />
           Mark round complete (opens the tournament revision window)
         </label>
-        <button type="button" disabled={busy} onClick={() => void settle()} className="mt-2 min-h-tap rounded-lg bg-navy px-4 font-display text-yellow active:scale-95 disabled:opacity-60">
+        <button type="button" disabled={busy} onClick={() => void settle()} className="mt-2 min-h-tap rounded-lg bg-orange px-4 font-display text-white active:scale-95 disabled:opacity-60">
           {busy ? 'Settling…' : 'Settle round'}
         </button>
         {err && <p className="mt-1 text-xs text-tomato">{err}</p>}
@@ -299,9 +299,9 @@ function TournamentResults({
 
   return (
     <section>
-      <h2 className="font-display text-lg text-yellow">Tournament results</h2>
-      <p className="text-xs text-bunlight/60">Settle the long-shot picks. Finalist: submit once per finalist.</p>
-      <div className="mt-2 rounded-card bg-bunlight/95 text-navy p-3 space-y-3">
+      <h2 className="font-display text-lg text-orange">Tournament results</h2>
+      <p className="text-xs text-ink/60">Settle the long-shot picks. Finalist: submit once per finalist.</p>
+      <div className="mt-2 rounded-card bg-white text-ink shadow-sm p-3 space-y-3">
         {(['champion', 'finalist'] as const).map((pt) => (
           <ResultPicker
             key={pt}
@@ -346,16 +346,16 @@ function ResultPicker({
     <div className="flex items-center gap-2">
       <span className="w-28 text-sm font-bold">{label}</span>
       {options.length === 0 ? (
-        <span className="text-xs text-navy/40 italic">{emptyNote}</span>
+        <span className="text-xs text-ink/40 italic">{emptyNote}</span>
       ) : (
         <>
-          <select value={val} onChange={(e) => setVal(e.target.value)} className="flex-1 min-h-tap rounded text-sm">
+          <select value={val} onChange={(e) => setVal(e.target.value)} className="flex-1 min-h-tap rounded text-sm text-ink focus:ring-orange">
             <option value="">Choose…</option>
             {options.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
-          <button type="button" disabled={busy || !val} onClick={() => onSet(val)} className="min-h-tap rounded-lg bg-navy px-3 font-display text-yellow text-sm disabled:opacity-50">
+          <button type="button" disabled={busy || !val} onClick={() => onSet(val)} className="min-h-tap rounded-lg bg-orange px-3 font-display text-white text-sm disabled:opacity-50">
             {busy ? '…' : 'Set'}
           </button>
         </>
@@ -369,8 +369,8 @@ function NumberResult({ label, busy, onSet }: { label: string; busy: boolean; on
   return (
     <div className="flex items-center gap-2">
       <span className="w-28 text-sm font-bold">{label}</span>
-      <input inputMode="numeric" value={val} onChange={(e) => setVal(e.target.value.replace(/[^0-9]/g, ''))} placeholder="actual total" className="flex-1 min-h-tap rounded px-2 text-sm" />
-      <button type="button" disabled={busy || !val} onClick={() => onSet(val)} className="min-h-tap rounded-lg bg-navy px-3 font-display text-yellow text-sm disabled:opacity-50">
+      <input inputMode="numeric" value={val} onChange={(e) => setVal(e.target.value.replace(/[^0-9]/g, ''))} placeholder="actual total" className="flex-1 min-h-tap rounded px-2 text-sm text-ink focus:ring-orange" />
+      <button type="button" disabled={busy || !val} onClick={() => onSet(val)} className="min-h-tap rounded-lg bg-orange px-3 font-display text-white text-sm disabled:opacity-50">
         {busy ? '…' : 'Set'}
       </button>
     </div>
@@ -415,12 +415,12 @@ function DecayEditor({ onSaved }: { onSaved: (m: string) => void }) {
 
   return (
     <section>
-      <h2 className="font-display text-lg text-yellow">Decay table editor</h2>
-      <p className="text-xs text-bunlight/60">Tune the long-shot point values (spec §4.3). Blur a cell to save.</p>
-      <div className="mt-2 rounded-card bg-bunlight/95 text-navy p-3 overflow-x-auto">
+      <h2 className="font-display text-lg text-orange">Decay table editor</h2>
+      <p className="text-xs text-ink/60">Tune the long-shot point values (spec §4.3). Blur a cell to save.</p>
+      <div className="mt-2 rounded-card bg-white text-ink shadow-sm p-3 overflow-x-auto">
         <table className="text-xs border-collapse">
           <thead>
-            <tr className="text-navy/60">
+            <tr className="text-ink/60">
               <th className="text-left pr-2">Pick</th>
               {DECAY_BUCKETS.map((b) => (
                 <th key={b.label} className="px-1 text-center">{b.label}</th>
@@ -429,14 +429,14 @@ function DecayEditor({ onSaved }: { onSaved: (m: string) => void }) {
           </thead>
           <tbody>
             {types.map((pt) => (
-              <tr key={pt} className="border-t border-navy/10">
+              <tr key={pt} className="border-t border-ink/10">
                 <td className="pr-2 font-bold">{TOURNEY_PICK_LABELS[pt] ?? pt}</td>
                 {DECAY_BUCKETS.map((b) => {
                   const v = byType.get(pt)?.get(b.key)
                   return (
                     <td key={b.label} className="px-1 py-0.5 text-center">
                       {v === undefined ? (
-                        <span className="text-navy/30">—</span>
+                        <span className="text-ink/30">—</span>
                       ) : (
                         <input
                           aria-label={`${pt} ${b.label}`}
@@ -445,7 +445,7 @@ function DecayEditor({ onSaved }: { onSaved: (m: string) => void }) {
                           value={v}
                           onChange={(e) => edit(pt, b.key, Number(e.target.value.replace(/[^0-9]/g, '') || 0))}
                           onBlur={(e) => void saveCell(pt, b.key, Number(e.target.value.replace(/[^0-9]/g, '') || 0))}
-                          className="w-10 rounded text-center"
+                          className="w-10 rounded text-center text-ink focus:ring-orange"
                         />
                       )}
                     </td>

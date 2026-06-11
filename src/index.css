@@ -7,7 +7,8 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-navy font-body text-bunlight antialiased;
+    /* Bright warm theme: cream page, dark-ink text. */
+    @apply bg-cream font-body text-ink antialiased;
   }
   /* Respect reduced-motion globally (spec §7.5). */
   @media (prefers-reduced-motion: reduce) {
