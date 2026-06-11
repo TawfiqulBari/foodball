@@ -5,7 +5,7 @@
 -- Stadium feed updates live.
 -- ════════════════════════════════════════════════════════════════════════════
 
-create table public.match_commentary (
+create table if not exists public.match_commentary (
   id         bigint generated always as identity primary key,
   match_id   bigint not null references public.matches(id) on delete cascade,
   minute     int,
@@ -13,10 +13,17 @@ create table public.match_commentary (
   kind       text not null default 'note' check (kind in ('note', 'goal', 'card', 'ht', 'ft', 'ko')),
   created_at timestamptz not null default now()
 );
-create index match_commentary_idx on public.match_commentary (match_id, created_at desc);
+create index if not exists match_commentary_idx on public.match_commentary (match_id, created_at desc);
 
 alter table public.match_commentary enable row level security;
-create policy commentary_read on public.match_commentary for select to authenticated using (true);
+do $$
+begin
+  if not exists (select 1 from pg_policies
+                  where schemaname = 'public' and tablename = 'match_commentary' and policyname = 'commentary_read') then
+    create policy commentary_read on public.match_commentary for select to authenticated using (true);
+  end if;
+end
+$$;
 grant select on public.match_commentary to anon, authenticated;
 
 -- Auto-commentary: when a match row changes, narrate kickoff, each goal, full time.
@@ -52,6 +59,7 @@ begin
   return NEW;
 end;
 $$;
+drop trigger if exists trg_match_commentary on public.matches;
 create trigger trg_match_commentary
   after update on public.matches
   for each row execute function public.fb_auto_commentary();
