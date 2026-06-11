@@ -182,6 +182,11 @@ export interface Database {
           match_picks_grace_until: string | null
         }>
       }
+      signup_allowed_domains: {
+        Row: { domain: string; created_at: string }
+        Insert: { domain: string; created_at?: string }
+        Update: Partial<{ domain: string }>
+      }
     }
     Views: {
       leaderboard: { Row: LeaderboardRow }
@@ -215,6 +220,8 @@ export interface Database {
       fb_round_props_grace_active: { Args: Record<string, never>; Returns: boolean }
       fb_admin_set_match_picks_grace: { Args: { p_until: string | null }; Returns: void }
       fb_match_picks_grace_active: { Args: Record<string, never>; Returns: boolean }
+      fb_admin_add_signup_domain: { Args: { p_domain: string }; Returns: void }
+      fb_admin_remove_signup_domain: { Args: { p_domain: string }; Returns: void }
       fb_tourney_revision_open: { Args: Record<string, never>; Returns: boolean }
     }
   }

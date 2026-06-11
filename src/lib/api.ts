@@ -260,6 +260,28 @@ export async function adminSetMatchPicksGrace(until: string | null): Promise<voi
   if (error) throw error
 }
 
+// ─── Signup domain allowlist (admin) ─────────────────────────────────────────
+
+/** The email domains allowed to sign up. Readable only by an admin (RLS). */
+export async function fetchSignupDomains(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('signup_allowed_domains')
+    .select('domain')
+    .order('domain')
+  if (error) throw error
+  return (data ?? []).map((r) => r.domain)
+}
+
+export async function adminAddSignupDomain(domain: string): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_add_signup_domain', { p_domain: domain })
+  if (error) throw error
+}
+
+export async function adminRemoveSignupDomain(domain: string): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_remove_signup_domain', { p_domain: domain })
+  if (error) throw error
+}
+
 // ─── Profile (onboarding + avatar) ───────────────────────────────────────────
 
 export async function updateProfile(

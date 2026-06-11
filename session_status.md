@@ -58,6 +58,11 @@ Foundation (earlier in the build):
   nations** (`src/lib/kits.ts`, incl. a Croatia checker pattern); **live match clock**
   in stadium mode; bigger/contrastier bottom nav; mobile polish.
 - **Admin** (`tawfiqul.bari@infosonik.com`) — `is_admin=true`.
+- **Signup lockdown** (`0015`): a server-side email-domain allowlist (BEFORE INSERT
+  trigger on `auth.users`) restricts who can register — seeded with `infosonik.com`,
+  admin-managed via Admin → Launch tools → "Who can sign up". Verified: a `@gmail.com`
+  signup is rejected ("sign-ups are limited to approved email domains"); `@infosonik.com`
+  succeeds. Fail-open if the allowlist is ever emptied.
 
 To make yourself admin after signing up:
 ```bash
@@ -150,7 +155,8 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
   only does the 72 group games; knockout slots are placeholders in openfootball).
 - **Squads sync** to populate `players_catalog` — until then Clean Plate / Top Chef /
   Golden Boot pickers are empty; Top Chef + awards settle from admin data.
-- **Lock down signups** before sharing widely (currently open).
+- **Signups are gated** to `@infosonik.com` (`0015`) — add colleagues' other work
+  domains in Admin → Launch tools → "Who can sign up" before sharing if needed.
 - **Optional polish:** `lottie-react` uninstalled (M4 uses framer-motion + mascot +
   emoji confetti); the "Goals o/u 2.5" label could be reworded to "3+ goals?".
 

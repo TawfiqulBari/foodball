@@ -56,7 +56,11 @@ What exists now:
   (token-free auto-settle: the `http` extension fetches openfootball in-DB and pg_cron
   `foodball-openfootball-sync` settles finished group matches via `fb_ingest_result` —
   `fb_settle_from_openfootball_json(jsonb)` is the pure, testable core; manual results
-  always win; inert where `http` is unavailable). `supabase/seed.sql` seeds reference data +
+  always win; inert where `http` is unavailable), and `0015_signup_domain_allowlist.sql`
+  (a BEFORE INSERT trigger on `auth.users` restricts sign-ups to an admin-managed email-
+  domain allowlist — `public.signup_allowed_domains`, seeded `infosonik.com`; fail-open
+  when empty; admin RPCs `fb_admin_add_signup_domain`/`fb_admin_remove_signup_domain`).
+  `supabase/seed.sql` seeds reference data +
   the §4.3 decay table. **Local Docker mounts the M2/M3 migrations as `01b_m2.sql` /
   `01c_m3.sql` (see compose); the CLI/hosted stack applies all of `supabase/migrations/`.**
   Apply a new migration to the live stack with

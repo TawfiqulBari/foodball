@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { useAuth } from '../auth/AuthProvider'
 import {
+  adminAddSignupDomain,
   adminPostCommentary,
+  adminRemoveSignupDomain,
   adminSetLongshotGrace,
   adminSetMatchPicksGrace,
   adminSetResult,
@@ -15,6 +17,7 @@ import {
   fetchLongshotGrace,
   fetchMatchPicksGrace,
   fetchRoundPropsGrace,
+  fetchSignupDomains,
   fetchMatches,
   fetchPlayers,
   fetchRounds,
@@ -185,6 +188,93 @@ function GraceControl({
   )
 }
 
+function SignupDomains({ onSaved }: { onSaved: (m: string) => void }) {
+  const [domains, setDomains] = useState<string[]>([])
+  const [input, setInput] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const reload = () =>
+    fetchSignupDomains()
+      .then(setDomains)
+      .catch(() => {})
+  useEffect(() => {
+    void reload()
+  }, [])
+
+  async function add() {
+    if (!input.trim()) return
+    setBusy(true)
+    try {
+      await adminAddSignupDomain(input)
+      setInput('')
+      await reload()
+      onSaved('Signup domain added.')
+    } catch (e) {
+      onSaved(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function remove(d: string) {
+    setBusy(true)
+    try {
+      await adminRemoveSignupDomain(d)
+      await reload()
+      onSaved(`Removed ${d}.`)
+    } catch (e) {
+      onSaved(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="border-t border-border pt-3">
+      <label className="text-xs font-semibold text-muted-foreground">Who can sign up — allowed email domains</label>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {domains.length === 0 ? (
+          <span className="text-xs font-body text-destructive">⚠ No allowlist — anyone can sign up.</span>
+        ) : (
+          domains.map((d) => (
+            <span key={d} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-body text-foreground">
+              @{d}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void remove(d)}
+                aria-label={`remove ${d}`}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                ✕
+              </button>
+            </span>
+          ))
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && void add()}
+          placeholder="company.com"
+          className="min-h-tap rounded-lg border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <button
+          type="button"
+          disabled={busy || !input.trim()}
+          onClick={() => void add()}
+          className="min-h-tap rounded-lg bg-primary px-3 font-display text-sm text-primary-foreground active:scale-95 disabled:opacity-50"
+        >
+          Add
+        </button>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Only these domains can register (enforced server-side). Empty = open to anyone.
+      </p>
+    </div>
+  )
+}
+
 function LaunchTools({ onSaved }: { onSaved: (m: string) => void }) {
   return (
     <section>
@@ -233,6 +323,8 @@ function LaunchTools({ onSaved }: { onSaved: (m: string) => void }) {
             Plays Chef’s Kiss → Full Course → Spicy ×2 → Burnt Toast locally (no DB write) to verify queueing + reduced-motion.
           </p>
         </div>
+
+        <SignupDomains onSaved={onSaved} />
       </div>
     </section>
   )
