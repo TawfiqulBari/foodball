@@ -2,12 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current state: Milestones 1–3 built & verified
+## Current state: Milestones 1–4 built & verified
 
-**M1 (core loop), M2 (full markets + avatars), and M3 (auto-sync + realtime) are
-built and their acceptance checklists pass.** Work **milestone by milestone
-(M1→M5)**, verifying each milestone's acceptance checklist (spec §9) before the
-next. The canonical source of truth remains
+**M1 (core loop), M2 (full markets + avatars), M3 (auto-sync + realtime), and M4
+(the fun layer) are built and their acceptance checklists pass.** Work **milestone
+by milestone (M1→M5)**, verifying each milestone's acceptance checklist (spec §9)
+before the next. The canonical source of truth remains
 `plans/worldcup-league-claude-code-prompt.md` — read it before extending. Brand
 assets live in `plans/` and `public/branding/` (+ a `/branding/` copy the spec expects).
 
@@ -22,6 +22,9 @@ What exists now:
   builder/onboarding + avatars on the leaderboard, an installable **PWA**, and a
   "The Menu" rules page generated from the scoring tables. **M3 added:** a live
   Realtime leaderboard + live-score display + rank-change arrows (`rank_delta`).
+  **M4 added:** result-moment overlays (`<ResultOverlay>`/`<ResultMoments>` — the
+  reused `<FoodBallMascot>` + framer-motion + food-confetti, queued one-at-a-time,
+  reduced-motion aware), podium/row layout animation, and rivals pinning.
 - **Database** — `supabase/migrations/` `0001_init.sql` (M1 schema + RLS + pick-lock
   trigger + outcome scoring), `0002_m2_markets_props_decay.sql` (all-market scoring,
   round-prop settlement, tournament decay scoring, revision-window trigger +
@@ -46,11 +49,12 @@ What exists now:
   or `SYNC_SECRET`-gated; football-data.org→openfootball fallback, Zod-validated).
 - Security control mapping in `docs/SECURITY.md`; how-to-run in `docs/RUNNING.md`.
 
-Not yet built (later milestones): **M4** result-moment overlays
-(`framer-motion`/`lottie`, queueing, reduced-motion, podium/rivals); **M5** the
-Remotion `/recap` package. Also not yet wired: the `pg_cron` schedule that calls
-`sync-results` (the function + RPC exist and are tested; the cron entry is a deploy
-step — see the header of `sync-results/index.ts`). Tournament settlement
+Not yet built: **M5** the optional Remotion `/recap` package (`npm run render`).
+`lottie-react` is still uninstalled — M4's celebrations use framer-motion + the
+mascot + emoji/SVG confetti (spec §7.5's "flying-food confetti" reading); drop in
+LottieFiles JSON later if desired. Also not yet wired: the `pg_cron` schedule that
+calls `sync-results` (the function + RPC exist and are tested; the cron entry is a
+deploy step — see the header of `sync-results/index.ts`). Tournament settlement
 (champion/finalists/awards) and knockout ET/penalty winners are **admin-entered**
 (the API poll never overwrites them). Squad data (`players_catalog`) is empty until
 a squads sync exists, so Clean Plate / Top Chef / Golden Boot pickers stay empty until then.
@@ -64,10 +68,10 @@ A $0-infrastructure, mobile-first PWA prediction league for ~20–50 office coll
 This is the **approved dependency allow-list**; don't add anything outside it without asking. Items marked *(planned)* are sanctioned by the spec but **not yet installed**.
 
 - **Frontend:** Vite + React 18 + TypeScript (strict, no `any`) + Tailwind v3. PWA via `vite-plugin-pwa` *(installed, M2)*.
-- **Animation:** `framer-motion` (UI/avatars), `lottie-react` (celebrations; bundle JSON locally in `src/assets/lottie/`) *(planned, M4)*.
+- **Animation:** `framer-motion` (UI/avatars/result overlays) *(installed, M4)*; `lottie-react` (celebrations; bundle JSON locally in `src/assets/lottie/`) *(planned/optional — not installed; M4 uses framer-motion + mascot + emoji confetti instead)*.
 - **Avatars:** DiceBear (`@dicebear/core` + `@dicebear/collection`), client-side SVG seeded from display name, no external image requests *(installed, M2)*.
 - **Backend:** Supabase free tier — Postgres, Auth (**email + password**, not magic-link — see "Current state" above), Realtime, Edge Functions, `pg_cron`.
-- **Installed today:** runtime `@supabase/supabase-js`, `react`, `react-dom`, `zod`, `@dicebear/core`, `@dicebear/collection`; tooling Vite + `@vitejs/plugin-react`, Tailwind, `vitest`, `tsx`, `vite-plugin-pwa` (+ pinned `workbox-build@7.1.0` — 7.3+ breaks the plugin's ESM `require`). See `package.json`.
+- **Installed today:** runtime `@supabase/supabase-js`, `react`, `react-dom`, `zod`, `@dicebear/core`, `@dicebear/collection`, `framer-motion`; tooling Vite + `@vitejs/plugin-react`, Tailwind, `vitest`, `tsx`, `vite-plugin-pwa` (+ pinned `workbox-build@7.1.0` — 7.3+ breaks the plugin's ESM `require`). See `package.json`.
 - **Hosting:** Vercel/Netlify (frontend) + Supabase (everything else).
 - **Results data:** football-data.org API (`WC`, 10 calls/min) primary → openfootball `worldcup.json` fallback → manual admin entry (must always work).
 - **Recap (M5, optional):** Remotion in a **separate `/recap` package**, not part of the web app runtime.

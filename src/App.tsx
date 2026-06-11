@@ -8,6 +8,7 @@ import { Leaderboard } from './screens/Leaderboard'
 import { MyPicks } from './screens/MyPicks'
 import { More } from './screens/More'
 import { Admin } from './screens/Admin'
+import { ResultMoments } from './components/ResultMoments'
 import { isOnboarded } from './lib/avatar'
 import { COPY } from './lib/copy'
 
@@ -43,6 +44,9 @@ export default function App() {
       </main>
 
       <BottomNav active={tab} onChange={setTab} isAdmin={Boolean(profile?.is_admin)} />
+
+      {/* Result-moment overlays — the fun layer (spec §7.5). */}
+      <ResultMoments />
     </div>
   )
 }
