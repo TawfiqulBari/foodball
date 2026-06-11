@@ -1,9 +1,10 @@
-export type Tab = 'matches' | 'leaderboard' | 'mypicks' | 'more' | 'admin'
+export type Tab = 'matches' | 'matchday' | 'leaderboard' | 'mypicks' | 'more' | 'admin'
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'matches', label: 'Matches', icon: '⚽' },
+  { key: 'matchday', label: 'Stadium', icon: '🏟️' },
   { key: 'leaderboard', label: 'Food Chain', icon: '🍽️' },
-  { key: 'mypicks', label: 'My Picks', icon: '📋' },
+  { key: 'mypicks', label: 'Picks', icon: '📋' },
   { key: 'more', label: 'More', icon: '🍔' },
 ]
 
@@ -25,7 +26,7 @@ export function BottomNav({
             <button
               type="button"
               onClick={() => onChange(t.key)}
-              className={`w-full min-h-tap flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-body font-semibold transition-colors ${
+              className={`w-full min-h-tap flex flex-col items-center justify-center gap-0.5 px-0.5 py-2 text-[10px] font-body font-semibold transition-colors ${
                 active === t.key ? 'text-yellow' : 'text-bunlight/60 hover:text-bunlight'
               }`}
               aria-current={active === t.key ? 'page' : undefined}
@@ -33,7 +34,7 @@ export function BottomNav({
               <span className="text-lg leading-none" aria-hidden>
                 {t.icon}
               </span>
-              {t.label}
+              <span className="w-full truncate text-center leading-tight">{t.label}</span>
             </button>
           </li>
         ))}

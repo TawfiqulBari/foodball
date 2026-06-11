@@ -77,6 +77,36 @@ export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
   return data ?? []
 }
 
+// ─── Match Day pitch ─────────────────────────────────────────────────────────
+
+/** Every match, ordered by kickoff — Match Day derives its live/recent tabs. */
+export async function fetchAllMatches(): Promise<MatchRow[]> {
+  const { data, error } = await supabase.from('matches').select('*').order('kickoff')
+  if (error) throw error
+  return data ?? []
+}
+
+/** All outcome pickers for a match. RLS reveals others' picks only after kickoff,
+ *  so this is fully populated exactly when the pitch is live (post-lock). */
+export async function fetchOutcomePickers(
+  matchId: number,
+): Promise<{ user_id: string; selection: string }[]> {
+  const { data, error } = await supabase
+    .from('match_picks')
+    .select('user_id, selection')
+    .eq('match_id', matchId)
+    .eq('market', 'outcome')
+  if (error) throw error
+  return (data ?? []).map((r) => ({ user_id: r.user_id, selection: r.selection }))
+}
+
+export async function fetchProfilesByIds(ids: string[]): Promise<Map<string, Profile>> {
+  if (ids.length === 0) return new Map()
+  const { data, error } = await supabase.from('profiles').select('*').in('id', ids)
+  if (error) throw error
+  return new Map((data ?? []).map((p) => [p.id, p]))
+}
+
 // ─── Reference data ──────────────────────────────────────────────────────────
 
 export async function fetchPlayers(): Promise<PlayerCatalog[]> {

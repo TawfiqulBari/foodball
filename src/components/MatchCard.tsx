@@ -19,7 +19,6 @@ export function MatchCard({
 }) {
   const [busyMarket, setBusyMarket] = useState<Market | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState(false)
 
   const home = teams.get(match.home_team)
   const away = teams.get(match.away_team)
@@ -108,19 +107,12 @@ export function MatchCard({
         })}
       </div>
 
-      {/* Side markets — exact score / BTTS / over-under */}
-      {!finished && !locked && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-3 w-full text-center text-xs font-body font-bold text-teal underline underline-offset-2"
-        >
-          {expanded ? 'Hide side dishes ▲' : 'Add side dishes — exact score, BTTS, over/under ▼'}
-        </button>
-      )}
-
-      {expanded && !disabled && (
+      {/* Side dishes — exact score / BTTS / over-under (always shown while open) */}
+      {!disabled && (
         <div className="mt-3 space-y-3 border-t border-navy/10 pt-3">
+          <p className="text-center text-[11px] font-body font-bold uppercase tracking-wide text-teal">
+            🍟 Side dishes
+          </p>
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-navy/50">
               {COPY.fullCourse} — exact score{' '}

@@ -4,6 +4,7 @@ import { BottomNav, type Tab } from './components/BottomNav'
 import { Login } from './screens/Login'
 import { Onboarding } from './screens/Onboarding'
 import { Matches } from './screens/Matches'
+import { MatchDay } from './screens/MatchDay'
 import { Leaderboard } from './screens/Leaderboard'
 import { MyPicks } from './screens/MyPicks'
 import { More } from './screens/More'
@@ -36,7 +37,8 @@ export default function App() {
       </header>
 
       <main>
-        {tab === 'matches' && <Matches />}
+        {tab === 'matches' && <Matches onRoundComplete={() => setTab('matchday')} />}
+        {tab === 'matchday' && <MatchDay />}
         {tab === 'leaderboard' && <Leaderboard />}
         {tab === 'mypicks' && <MyPicks />}
         {tab === 'more' && <More />}

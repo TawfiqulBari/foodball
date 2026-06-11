@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { supabase } from '../lib/supabase'
+import { roundComplete } from '../lib/matchField'
 import {
   fetchMatches,
   fetchMyPicks,
@@ -25,8 +26,9 @@ import { MatchCard } from '../components/MatchCard'
 import { RoundPropsCard } from '../components/RoundPropsCard'
 import { COPY } from '../lib/copy'
 
-export function Matches() {
+export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
   const { session } = useAuth()
+  const redirectedRounds = useRef<Set<string>>(new Set())
   const [rounds, setRounds] = useState<RoundRow[]>([])
   const [activeRound, setActiveRound] = useState<string>('MD1')
   const [teams, setTeams] = useState<Map<number, Team>>(new Map())
@@ -93,6 +95,15 @@ export function Matches() {
       })
       return next
     })
+    // When the LAST outcome pick of the round lands, walk out to the Stadium.
+    if (market === 'outcome' && !redirectedRounds.current.has(activeRound)) {
+      const outcomeIds = new Set<number>([matchId])
+      for (const m of matches) if (picks.has(`${m.id}:outcome`)) outcomeIds.add(m.id)
+      if (roundComplete(outcomeIds, matches.map((m) => m.id))) {
+        redirectedRounds.current.add(activeRound)
+        onRoundComplete?.()
+      }
+    }
   }
 
   async function onProp(prop: Prop, selection: string) {
