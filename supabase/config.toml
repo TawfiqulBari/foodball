@@ -1,0 +1,47 @@
+# Supabase CLI config for the SELF-HOSTED stack on this server.
+# `supabase start` reads this; `supabase db reset` applies migrations/ + seed.sql.
+# Secrets are referenced with env(...) so they never live in this committed file.
+# (Some keys vary by CLI version — verify against `supabase --version` at go-live.)
+project_id = "foodball"
+
+[api]
+enabled = true
+port = 54321                 # Kong gateway — the host nginx proxies /auth/v1 etc. here
+schemas = ["public"]
+extra_search_path = ["public"]
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+# Set both to your real public origin at go-live (single origin via nginx).
+site_url = "https://CHANGE-ME.example.com"
+additional_redirect_urls = ["https://CHANGE-ME.example.com"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+# Email + password with NO confirmation loop → colleagues are in immediately,
+# no SMTP dependency for sign-up (spec deviation chosen for the office launch).
+enable_confirmations = false
+double_confirm_changes = false
+
+[auth.email.smtp]
+# Gmail/Workspace SMTP — used for password resets etc. (not required for signup).
+enabled = true
+host = "smtp.gmail.com"
+port = 587
+user = "CHANGE-ME@infosonik.com"
+pass = "env(GOTRUE_SMTP_PASS)"     # export from secrets/smtp_password.txt at go-live
+admin_email = "CHANGE-ME@infosonik.com"
+sender_name = "FoodBall"
+
+[functions.sync-fixtures]
+verify_jwt = true                  # never anonymous; the function also self-checks admin

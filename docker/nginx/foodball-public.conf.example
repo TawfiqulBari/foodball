@@ -1,0 +1,70 @@
+# ════════════════════════════════════════════════════════════════════════════
+# FoodBall PUBLIC vhost — add to the host nginx (the box already runs nginx on
+# :80/:443). Single origin: serves the SPA AND proxies the Supabase API, so
+# supabase-js talks to https://HOSTNAME/{auth,rest,realtime}/v1 with no CORS and
+# the CSP can stay connect-src 'self'. Replace HOSTNAME, then certbot + reload.
+#
+#   sudo cp this → /etc/nginx/sites-available/foodball.conf
+#   sudo ln -s /etc/nginx/sites-available/foodball.conf /etc/nginx/sites-enabled/
+#   sudo certbot --nginx -d HOSTNAME        # issues + wires the cert
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# Cloudflare note: if the DNS record is PROXIED (orange cloud), certbot HTTP-01
+# may be intercepted — either set the record to DNS-only for issuance, or use a
+# Cloudflare Origin Certificate + SSL mode "Full (strict)".
+# ════════════════════════════════════════════════════════════════════════════
+
+server {
+  listen 80;
+  listen [::]:80;
+  server_name HOSTNAME;
+  # certbot adds the ACME challenge + the 301→https redirect here.
+  location / { return 301 https://$host$request_uri; }
+}
+
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  http2 on;
+  server_name HOSTNAME;
+
+  # certbot fills these in:
+  # ssl_certificate     /etc/letsencrypt/live/HOSTNAME/fullchain.pem;
+  # ssl_certificate_key /etc/letsencrypt/live/HOSTNAME/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+  ssl_session_tickets off;
+
+  server_tokens off;
+  client_max_body_size 2m;
+
+  add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+  add_header X-Frame-Options "DENY" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+  # ── Supabase API (single origin) ───────────────────────────────────────────
+  # The CLI gateway (Kong) listens on 127.0.0.1:54321 and already knows the
+  # /auth/v1, /rest/v1, /realtime/v1 routes — so pass the path through as-is.
+  location ~ ^/(auth|rest|realtime|storage)/v1/ {
+    proxy_pass http://127.0.0.1:54321;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    # WebSocket upgrade for Realtime (M3).
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 3600s;
+  }
+
+  # ── SPA (the hardened foodball-web container on 127.0.0.1:8090) ─────────────
+  location / {
+    proxy_pass http://127.0.0.1:8090;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}

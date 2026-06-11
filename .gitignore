@@ -1,0 +1,47 @@
+# Dependencies & build output
+node_modules/
+dist/
+build/
+out/
+*.local
+
+# Env files — NEVER commit real secrets (see .env.example for the template)
+.env
+.env.*
+runtime.env
+!.env.example
+
+# Docker secrets (file-based) — keep the dir + docs, ignore the secret material
+secrets/*
+!secrets/.gitkeep
+!secrets/README.md
+
+# Private keys / certs
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Database dumps (NOT migrations — those live in supabase/ and ARE tracked)
+*.dump
+dump.sql
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+*.swp
+*~
+
+# Supabase CLI local state
+supabase/.branches/
+supabase/.temp/

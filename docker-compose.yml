@@ -1,0 +1,117 @@
+# ════════════════════════════════════════════════════════════════════════════
+# FoodBall — local hardened run.
+#   web : the SPA behind unprivileged nginx       → http://127.0.0.1:8090
+#   db  : Postgres with the M1 migration + seed auto-applied (internal network,
+#         NOT published — exercise it with `docker compose exec db psql ...`)
+#
+# Hardening (CIS Docker Benchmark §5): non-root, read-only rootfs, no-new-
+# privileges, all capabilities dropped (minimal add-back for the DB entrypoint),
+# resource + pid limits, file-based secrets, localhost-only port publishing,
+# log rotation. Ports chosen to avoid the host's existing 4000/5432 services.
+# ════════════════════════════════════════════════════════════════════════════
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true            # DB network has no route off-box
+
+volumes:
+  foodball_pgdata:
+    driver: local
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # PUBLIC client config only. For full auth/data locally, rebuild with the
+        # Supabase CLI gateway URL + anon key (see docs/RUNNING.md).
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-http://127.0.0.1:54321}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-local-anon-key}
+    image: foodball-web:m1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:8080"          # localhost only — front it with TLS in prod
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=16m
+      - /var/cache/nginx:nosuid,size=16m
+      - /var/run:nosuid,size=4m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: "101:101"
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 100
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - frontend
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "3" }
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # NOT published — reachable only on the internal network + via compose exec.
+    environment:
+      POSTGRES_USER: foodball
+      POSTGRES_DB: foodball
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      # scram-sha-256 for any networked auth (CIS Postgres).
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    secrets:
+      - db_password
+    volumes:
+      - foodball_pgdata:/var/lib/postgresql/data
+      # Init order: auth shim → migration → grants → seed (run once, on empty volume).
+      - ./docker/db-init/00_auth_shim.sql:/docker-entrypoint-initdb.d/00_auth_shim.sql:ro
+      - ./supabase/migrations/0001_init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ./docker/db-init/02_grants.sql:/docker-entrypoint-initdb.d/02_grants.sql:ro
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/03_seed.sql:ro
+      - ./docker/db-init/03_demo.sql:/docker-entrypoint-initdb.d/04_demo.sql:ro
+      # Acceptance test, available at /tests inside the container (not auto-run).
+      - ./supabase/tests:/tests:ro
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=32m
+      - /run:nosuid,size=16m
+      - /run/postgresql:nosuid,size=16m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:                            # minimal set the official entrypoint needs
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foodball -d foodball"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - backend
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "3" }

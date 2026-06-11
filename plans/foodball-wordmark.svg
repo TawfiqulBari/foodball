@@ -1,0 +1,28 @@
+<svg width="1100" height="260" viewBox="0 0 1100 260" xmlns="http://www.w3.org/2000/svg">
+<defs><clipPath id="ballclip"><circle cx="0" cy="0" r="74"/></clipPath></defs>
+<text x="30" y="178" font-family="Luckiest Guy" font-size="160" fill="#0A2540">F</text>
+<g transform="translate(216,122)">
+  <circle r="74" fill="#FFF4DC"/>
+  <g clip-path="url(#ballclip)">
+    <polygon points="0,31 19,45 12,68 -12,68 -19,45" fill="#0A2540"/>
+    <polygon points="-50,24 -31,34 -35,58 -59,59 -68,38" fill="#0A2540"/>
+    <polygon points="50,24 68,38 59,59 35,58 31,34" fill="#0A2540"/>
+    <rect x="-84" y="5" width="168" height="16" fill="#8A5A2B"/>
+    <rect x="-84" y="-4" width="168" height="9" fill="#E2504C"/>
+    <path d="M-84,-15 L84,-15 L84,-5 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 q-8.4,8.4 -16.8,0 Z" fill="#7CC243"/>
+    <rect x="-84" y="-84" width="168" height="69" fill="#F2A93B"/>
+    <ellipse cx="-28" cy="-54" rx="20" ry="8" fill="#F7BD63"/>
+    <ellipse cx="-40" cy="-33" rx="6" ry="3.4" fill="#FBE8C0" transform="rotate(-20 -40 -33)"/>
+    <ellipse cx="-8" cy="-60" rx="6" ry="3.4" fill="#FBE8C0" transform="rotate(12 -8 -60)"/>
+    <ellipse cx="33" cy="-46" rx="6" ry="3.4" fill="#FBE8C0" transform="rotate(-10 33 -46)"/>
+    <ellipse cx="-58" cy="-22" rx="6" ry="3.4" fill="#FBE8C0" transform="rotate(18 -58 -22)"/>
+    <ellipse cx="-19" cy="-30" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="#0A2540" stroke-width="2"/>
+    <ellipse cx="19" cy="-30" rx="9.5" ry="11.5" fill="#FFFFFF" stroke="#0A2540" stroke-width="2"/>
+    <circle cx="-16" cy="-27" r="5" fill="#0A2540"/>
+    <circle cx="22" cy="-27" r="5" fill="#0A2540"/>
+  </g>
+  <circle r="74" fill="none" stroke="#0A2540" stroke-width="5"/>
+</g>
+<text x="298" y="178" font-family="Luckiest Guy" font-size="160" fill="#0A2540">ODBALL</text>
+<text x="300" y="232" font-family="Luckiest Guy" font-size="34" fill="#17A2C4" letter-spacing="6">PREDICT. FEAST. REPEAT.</text>
+</svg>

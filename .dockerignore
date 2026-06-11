@@ -1,0 +1,33 @@
+# Keep the build context minimal and secret-free (CIS Docker 4.10 / NIST CM-6).
+.git
+.gitignore
+node_modules
+dist
+build
+out
+
+# Never copy secrets or env material into an image layer
+secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Backend / infra assets not needed by the frontend image build.
+# (docker/nginx/foodball.conf IS needed by the runtime stage; exclude only the
+# pieces the frontend build never touches.)
+supabase
+docker/db-init
+docs
+plans
+branding
+scripts
+**/*.md
+*.log
+
+# Dev-only
+.vscode
+.idea
+coverage
+.vitest

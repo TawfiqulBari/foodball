@@ -1,0 +1,58 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <clipPath id="ballclip"><circle cx="0" cy="0" r="118"/></clipPath>
+  <path id="arcTop" d="M 72 189 A 196 196 0 0 1 440 189" fill="none"/>
+  <path id="arcBot" d="M 72 323 A 196 196 0 0 0 440 323" fill="none"/>
+</defs>
+<circle cx="256" cy="256" r="248" fill="#0A2540"/>
+<circle cx="256" cy="256" r="248" fill="none" stroke="#17A2C4" stroke-width="10"/>
+<circle cx="256" cy="256" r="230" fill="none" stroke="#FFC857" stroke-width="3"/>
+
+<g transform="translate(256,278) rotate(-32)">
+  <rect x="-8" y="-165" width="16" height="290" rx="8" fill="#B7C6CE"/>
+  <rect x="-20" y="-168" width="8" height="44" rx="4" fill="#B7C6CE"/>
+  <rect x="-4" y="-168" width="8" height="44" rx="4" fill="#B7C6CE"/>
+  <rect x="12" y="-168" width="8" height="44" rx="4" fill="#B7C6CE"/>
+  <rect x="-20" y="-132" width="40" height="16" rx="6" fill="#B7C6CE"/>
+</g>
+<g transform="translate(256,278) rotate(32)">
+  <rect x="-7" y="-30" width="14" height="155" rx="7" fill="#B7C6CE"/>
+  <path d="M -13 -165 Q 16 -150 16 -100 L 16 -24 L -13 -24 Z" fill="#DDE7EC"/>
+</g>
+
+<g transform="translate(256,278)">
+  <circle r="118" fill="#FFF4DC"/>
+  <g clip-path="url(#ballclip)">
+    <polygon points="0,50 31,73 19,109 -19,109 -31,73" fill="#0A2540"/>
+    <polygon points="-80,38 -50,55 -56,92 -94,94 -108,60" fill="#0A2540"/>
+    <polygon points="80,38 108,60 94,94 56,92 50,55" fill="#0A2540"/>
+    <path d="M0,50 L0,34 M-31,73 L-52,64 M31,73 L52,64 M-19,109 L-24,120 M19,109 L24,120" stroke="#0A2540" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <rect x="-130" y="8" width="260" height="26" fill="#8A5A2B"/>
+    <rect x="-130" y="-6" width="260" height="14" fill="#E2504C"/>
+    <path d="M-130,-24 L130,-24 L130,-8 q-13,13 -26,0 q-13,13 -26,0 q-13,13 -26,0 q-13,13 -26,0 q-13,13 -26,0 q-13,13 -26,0 q-13,13 -26,0 q-13,13 -26,0 q-13,13 -26,0 q-13,13 -26,0 Z" fill="#7CC243"/>
+    <rect x="-130" y="-130" width="260" height="106" fill="#F2A93B"/>
+    <ellipse cx="-44" cy="-84" rx="34" ry="13" fill="#F7BD63"/>
+    <ellipse cx="-62" cy="-54" rx="9" ry="5" fill="#FBE8C0" transform="rotate(-20 -62 -54)"/>
+    <ellipse cx="-14" cy="-96" rx="9" ry="5" fill="#FBE8C0" transform="rotate(12 -14 -96)"/>
+    <ellipse cx="52" cy="-74" rx="9" ry="5" fill="#FBE8C0" transform="rotate(-10 52 -74)"/>
+    <ellipse cx="84" cy="-44" rx="9" ry="5" fill="#FBE8C0" transform="rotate(25 84 -44)"/>
+    <ellipse cx="-94" cy="-38" rx="9" ry="5" fill="#FBE8C0" transform="rotate(18 -94 -38)"/>
+    <ellipse cx="-30" cy="-48" rx="15" ry="18" fill="#FFFFFF" stroke="#0A2540" stroke-width="3"/>
+    <ellipse cx="30" cy="-48" rx="15" ry="18" fill="#FFFFFF" stroke="#0A2540" stroke-width="3"/>
+    <circle cx="-26" cy="-44" r="8" fill="#0A2540"/>
+    <circle cx="34" cy="-44" r="8" fill="#0A2540"/>
+    <circle cx="-64" cy="-32" r="8" fill="#F08080" opacity="0.65"/>
+    <circle cx="64" cy="-32" r="8" fill="#F08080" opacity="0.65"/>
+  </g>
+  <circle r="118" fill="none" stroke="#FFF8EC" stroke-width="7"/>
+</g>
+
+<text font-family="Luckiest Guy" font-size="64" fill="#FFC857" letter-spacing="5">
+  <textPath href="#arcTop" startOffset="50%" text-anchor="middle">FOODBALL</textPath>
+</text>
+<text font-family="Luckiest Guy" font-size="29" fill="#8FD9EA" letter-spacing="3">
+  <textPath href="#arcBot" startOffset="50%" text-anchor="middle">CHAMPION EATS FREE</textPath>
+</text>
+<circle cx="38" cy="256" r="6" fill="#FFC857"/>
+<circle cx="474" cy="256" r="6" fill="#FFC857"/>
+</svg>
