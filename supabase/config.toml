@@ -21,8 +21,8 @@ port = 54323
 [auth]
 enabled = true
 # Set both to your real public origin at go-live (single origin via nginx).
-site_url = "https://CHANGE-ME.example.com"
-additional_redirect_urls = ["https://CHANGE-ME.example.com"]
+site_url = "https://foodball.tawfiqulbari.work"
+additional_redirect_urls = ["https://foodball.tawfiqulbari.work"]
 jwt_expiry = 3600
 enable_signup = true
 
@@ -35,13 +35,18 @@ double_confirm_changes = false
 
 [auth.email.smtp]
 # Gmail/Workspace SMTP — used for password resets etc. (not required for signup).
-enabled = true
+# Disabled for now: confirmations are off, so sign-up/login work without it. Flip
+# to true + set GOTRUE_SMTP_PASS (from secrets/) when you want password-reset email.
+enabled = false
 host = "smtp.gmail.com"
 port = 587
-user = "CHANGE-ME@infosonik.com"
-pass = "env(GOTRUE_SMTP_PASS)"     # export from secrets/smtp_password.txt at go-live
-admin_email = "CHANGE-ME@infosonik.com"
+user = "admin@tawfiqulbari.work"
+pass = "env(GOTRUE_SMTP_PASS)"
+admin_email = "admin@tawfiqulbari.work"
 sender_name = "FoodBall"
 
 [functions.sync-fixtures]
 verify_jwt = true                  # never anonymous; the function also self-checks admin
+
+[functions.sync-results]
+verify_jwt = false                 # called by pg_cron with the x-sync-secret header (self-checks)

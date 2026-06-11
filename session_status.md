@@ -9,6 +9,42 @@ pass.** The product is feature-complete; what remains is **deploy wiring**, not
 features (see "Remaining" below). Authoritative scoring/locking lives in Postgres;
 the client never computes points.
 
+## Live deployment
+
+**Running publicly at https://foodball.tawfiqulbari.work** (self-hosted Supabase
+CLI stack on this box, single origin behind the host nginx + Let's Encrypt).
+Verified end-to-end over HTTPS: signup/login (no email confirmation), Matches (5
+demo fixtures), the leaderboard view, and reference data all load for a signed-in
+user.
+
+What this session set up:
+- Supabase CLI stack (`supabase start`) — Postgres/Auth/Realtime/Storage/Studio/
+  Edge — with migrations `0001`–`0005` + `seed.sql` applied.
+- **`0005_grants.sql` (real bug fix):** the `anon`/`authenticated` table grants
+  previously lived only in the Docker harness (`02_grants.sql`), so a real Supabase
+  deploy hit "permission denied". Now a committed migration — applies everywhere.
+- **Security:** the Supabase CLI binds services to `0.0.0.0`; Docker's published
+  ports bypass `ufw`, so ports `54321–54327` are dropped on the public interface via
+  a persisted `DOCKER-USER` conntrack rule (`/etc/iptables/rules.v4`). nginx/localhost
+  still reach them. TLS cert auto-renews (certbot).
+- nginx vhost `foodball.conf` added (single origin: SPA on `:8090`, API proxied to
+  Kong `:54321`); **your other vhosts/containers were not touched.**
+- 5 demo MD1 fixtures inserted (`scripts/demo-matches.sql`, re-runnable).
+
+To make yourself admin after signing up:
+```bash
+docker exec -i supabase_db_foodball psql -U postgres -d postgres \
+  -c "update public.profiles set is_admin=true where id=(select id from auth.users where email='YOU@example.com');"
+```
+
+Caveats for the public surface:
+- **Signups are open** (`enable_signup = true`) — anyone with the URL can register.
+  Lock down (disable signups once colleagues join, or add a domain allowlist) before
+  sharing widely.
+- The `sync-results` cron is scheduled (0004) but **inert** here: the function isn't
+  deployed and `FOOTBALL_DATA_TOKEN` / Vault secrets aren't set, so fixtures are
+  demo/admin-entered for now. SMTP is off (password-reset email disabled; signup works).
+
 ## Milestones & commits
 
 | Commit | Milestone | Acceptance — how it's verified |

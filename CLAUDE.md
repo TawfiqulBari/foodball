@@ -32,9 +32,13 @@ What exists now:
   round-prop settlement, tournament decay scoring, revision-window trigger +
   `fb_set_tourney_pick`, decay helpers mirroring `src/lib/decay.ts`), and
   `0003_m3_autosync_realtime.sql` (`fb_ingest_result` with manual precedence + auto
-  scoring, `rank_history` + `rank_delta`, the Realtime publication). `supabase/seed.sql`
-  seeds fixtures + the §4.3 decay table. **Local Docker mounts the M2/M3 migrations
-  as `01b_m2.sql` / `01c_m3.sql` (see compose).**
+  scoring, `rank_history` + `rank_delta`, the Realtime publication),
+  `0004_sync_results_cron.sql` (pg_cron schedule — Supabase-only), and
+  `0005_grants.sql` (the `anon`/`authenticated` table grants PostgREST needs — these
+  live only in the harness's `02_grants.sql` otherwise, so a real Supabase deploy
+  needs this migration). `supabase/seed.sql` seeds reference data + the §4.3 decay
+  table. **Local Docker mounts the M2/M3 migrations as `01b_m2.sql` / `01c_m3.sql`
+  (see compose); the CLI/hosted stack applies all of `supabase/migrations/`.**
 - **Server acceptance tests** — `core_loop_test.sql` (M1),
   `m2_markets_props_decay_test.sql` (M2: markets, props, decay, the revision-window
   crux via RPC *and* raw insert), and `m3_autosync_test.sql` (M3: a simulated API
