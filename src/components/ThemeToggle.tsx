@@ -1,3 +1,4 @@
+import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '../lib/theme'
 
 /** Light/dark switch for the header. */
@@ -11,9 +12,9 @@ export function ThemeToggle() {
       aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
       aria-pressed={dark}
       title={dark ? 'Light mode' : 'Dark mode'}
-      className="grid h-9 w-9 place-items-center rounded-full bg-white/20 text-lg text-white transition hover:bg-white/30 active:scale-90"
+      className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground active:scale-90"
     >
-      {dark ? '🌙' : '☀️'}
+      {dark ? <Moon size={18} /> : <Sun size={18} />}
     </button>
   )
 }

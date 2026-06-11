@@ -52,16 +52,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 bg-gradient-to-r from-orange to-bun text-white px-4 py-3 flex items-center gap-2 shadow-md">
-        <img src="/branding/foodball-icon.svg" alt="" className="h-8 w-8 drop-shadow" />
-        <span className="font-display text-xl tracking-wide">{COPY.appName}</span>
-        <span className="ml-auto hidden font-body text-xs text-white/85 sm:block">{COPY.tagline}</span>
-        <div className="ml-auto sm:ml-3">
-          <ThemeToggle />
+      <header className="sticky top-0 z-20 border-b border-border bg-card/80 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center gap-2.5 px-4 py-2.5">
+          <img src="/branding/foodball-icon.svg" alt="" className="h-7 w-7 rounded-md" />
+          <span className="font-display text-lg font-extrabold tracking-tight text-foreground">
+            Food<span className="text-primary">Ball</span>
+          </span>
+          <span className="ml-auto hidden font-body text-xs text-muted-foreground sm:block">{COPY.tagline}</span>
+          <div className="ml-auto sm:ml-3">
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
-      <main>
+      <main className="mx-auto max-w-2xl">
         {tab === 'matches' && <Matches onRoundComplete={() => setTab('matchday')} />}
         {tab === 'matchday' && <MatchDay />}
         {tab === 'leaderboard' && <Leaderboard />}

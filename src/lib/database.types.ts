@@ -94,6 +94,16 @@ export interface DecayRow {
   points: number
 }
 
+export type CommentaryKind = 'note' | 'goal' | 'card' | 'ht' | 'ft' | 'ko'
+export interface MatchCommentary {
+  id: number
+  match_id: number
+  minute: number | null
+  body: string
+  kind: CommentaryKind
+  created_at: string
+}
+
 export interface Profile {
   id: string
   display_name: string
@@ -148,6 +158,11 @@ export interface Database {
         Insert: { pick_type: string; selection: string }
         Update: Partial<{ pick_type: string; selection: string }>
       }
+      match_commentary: {
+        Row: MatchCommentary
+        Insert: Partial<MatchCommentary> & { match_id: number; body: string }
+        Update: Partial<MatchCommentary>
+      }
     }
     Views: {
       leaderboard: { Row: LeaderboardRow }
@@ -171,6 +186,10 @@ export interface Database {
         Returns: void
       }
       fb_admin_set_tournament_result: { Args: { p_pick_type: string; p_selection: string }; Returns: void }
+      fb_admin_post_commentary: {
+        Args: { p_match_id: number; p_body: string; p_minute?: number | null; p_kind?: string }
+        Returns: number
+      }
       fb_tourney_revision_open: { Args: Record<string, never>; Returns: boolean }
     }
   }

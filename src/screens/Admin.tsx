@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { useAuth } from '../auth/AuthProvider'
 import {
+  adminPostCommentary,
   adminSetResult,
   adminSetTournamentResult,
   adminSetUnderdog,
@@ -197,8 +198,49 @@ function AdminMatchRow({
           <option value={String(match.away_team)}>{away?.fifa_code}</option>
         </select>
       </div>
+      <CommentaryComposer matchId={match.id} onSaved={onSaved} />
       {err && <p className="mt-1 text-xs text-destructive">{err}</p>}
     </li>
+  )
+}
+
+function CommentaryComposer({ matchId, onSaved }: { matchId: number; onSaved: (m: string) => void }) {
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function post() {
+    if (!text.trim()) return
+    setBusy(true)
+    try {
+      await adminPostCommentary(matchId, text.trim())
+      setText('')
+      onSaved('Commentary posted.')
+    } catch (e) {
+      onSaved(e instanceof Error ? e.message : 'Failed to post')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <input
+        aria-label="Live commentary"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && void post()}
+        placeholder="Post live commentary…"
+        className="min-h-tap flex-1 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+      <button
+        type="button"
+        disabled={busy || !text.trim()}
+        onClick={() => void post()}
+        className="min-h-tap rounded-lg bg-primary px-3 font-display text-sm text-primary-foreground active:scale-95 disabled:opacity-50"
+      >
+        Post
+      </button>
+    </div>
   )
 }
 

@@ -110,8 +110,8 @@ export function MatchCard({
       {/* Side dishes — exact score / BTTS / over-under (always shown while open) */}
       {!disabled && (
         <div className="mt-3 space-y-3 border-t border-border pt-3">
-          <p className="text-center text-[11px] font-body font-bold uppercase tracking-wide text-primary">
-            🍟 Side dishes
+          <p className="text-center text-[11px] font-body font-bold uppercase tracking-wide text-muted-foreground">
+            Side dishes
           </p>
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">

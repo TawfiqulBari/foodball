@@ -49,7 +49,7 @@ export function RoundPropsCard({
   return (
     <div className="rounded-card bg-card text-card-foreground shadow-sm border border-primary/40 p-4 mb-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-primary text-lg">Round specials 🍽️</h2>
+        <h2 className="font-display text-lg font-bold text-foreground">Round specials</h2>
         {locked && <span className="text-xs font-body text-destructive">Locked</span>}
       </div>
       <p className="text-xs font-body text-muted-foreground">

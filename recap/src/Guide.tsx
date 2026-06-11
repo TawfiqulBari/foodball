@@ -3,11 +3,11 @@ import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoC
 
 // FoodBall palette (spec §8).
 const C = {
-  navy: '#0A2540',
-  cream: '#FFF7ED',
-  ink: '#2B2018',
-  orange: '#F97316',
-  yellow: '#FFC857',
+  navy: '#0C2A1A', // deep forest-green video background (green template)
+  cream: '#F1FBF4',
+  ink: '#0C2A1A',
+  orange: '#34C77A', // green primary (headings / chips)
+  yellow: '#D9F99D', // light lime
   bun: '#F2A93B',
   lettuce: '#7CC243',
   tomato: '#E2504C',
@@ -54,16 +54,31 @@ const Chip: React.FC<{ children: React.ReactNode; delay: number; bg?: string; co
   )
 }
 
+/** Opening title — fully visible at frame 0 (gentle pulse only), so the video's
+ *  first frame & poster clearly say "How to play FoodBall". */
+const TitleCard: React.FC = () => {
+  const frame = useCurrentFrame()
+  const pulse = 1 + 0.03 * Math.sin(frame / 8)
+  return (
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: 80, background: C.navy }}>
+      <div style={{ fontSize: 120, transform: `scale(${pulse})` }}>🍔⚽</div>
+      <div style={{ fontFamily: FONT, fontSize: 90, color: C.orange, marginTop: 8, lineHeight: 1.05 }}>
+        How to play FoodBall
+      </div>
+      <div style={{ fontFamily: BODY, fontWeight: 800, fontSize: 42, color: C.yellow, marginTop: 16 }}>
+        Predict. Feast. Repeat.
+      </div>
+    </AbsoluteFill>
+  )
+}
+
 export const Guide: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: C.navy }}>
-      {/* S1 — welcome */}
+      {/* S1 — welcome. Title is fully visible from frame 0 so the poster / first
+          frame clearly reads "How to play FoodBall" (it only gently pulses). */}
       <Sequence durationInFrames={120}>
-        <Scene>
-          <div style={{ fontSize: 130 }}>🍔⚽</div>
-          <Heading delay={2}>How to play FoodBall</Heading>
-          <Line delay={14} color={C.yellow}>Predict. Feast. Repeat.</Line>
-        </Scene>
+        <TitleCard />
       </Sequence>
 
       {/* S2 — predict for points */}

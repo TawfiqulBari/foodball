@@ -8,47 +8,49 @@
    bg-primary…) so both themes stay sharp and consistent. ── */
 @layer base {
   :root {
-    --background: 36 100% 99%;
-    --foreground: 24 14% 12%;
+    /* Green fintech palette (light): near-white surfaces, spring-green primary. */
+    --background: 140 30% 99%;
+    --foreground: 150 25% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 24 14% 12%;
+    --card-foreground: 150 25% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 24 14% 12%;
-    --primary: 24 95% 53%; /* orange #F97316 */
+    --popover-foreground: 150 25% 11%;
+    --primary: 145 63% 41%; /* spring green */
     --primary-foreground: 0 0% 100%;
-    --secondary: 33 100% 96%;
-    --secondary-foreground: 24 30% 18%;
-    --muted: 30 16% 95%;
-    --muted-foreground: 24 8% 42%;
-    --accent: 33 100% 93%;
-    --accent-foreground: 24 30% 18%;
+    --secondary: 140 40% 96%;
+    --secondary-foreground: 150 25% 18%;
+    --muted: 140 22% 95%;
+    --muted-foreground: 150 8% 40%;
+    --accent: 142 46% 92%;
+    --accent-foreground: 150 25% 18%;
     --destructive: 2 75% 52%;
     --destructive-foreground: 0 0% 100%;
-    --border: 30 14% 89%;
-    --input: 30 14% 89%;
-    --ring: 24 95% 53%;
+    --border: 142 20% 88%;
+    --input: 142 20% 88%;
+    --ring: 145 63% 41%;
     --radius: 0.85rem;
   }
   .dark {
-    --background: 24 14% 8%;
-    --foreground: 36 33% 96%;
-    --card: 24 13% 12%;
-    --card-foreground: 36 33% 96%;
-    --popover: 24 13% 12%;
-    --popover-foreground: 36 33% 96%;
-    --primary: 24 95% 56%;
-    --primary-foreground: 24 30% 8%;
-    --secondary: 24 10% 18%;
-    --secondary-foreground: 36 33% 96%;
-    --muted: 24 9% 17%;
-    --muted-foreground: 30 10% 65%;
-    --accent: 24 10% 22%;
-    --accent-foreground: 36 33% 96%;
+    /* Deep forest-green surfaces (like the reference hero), bright green primary. */
+    --background: 150 30% 6%;
+    --foreground: 140 25% 95%;
+    --card: 150 26% 9%;
+    --card-foreground: 140 25% 95%;
+    --popover: 150 26% 9%;
+    --popover-foreground: 140 25% 95%;
+    --primary: 145 60% 50%;
+    --primary-foreground: 150 35% 7%;
+    --secondary: 150 16% 16%;
+    --secondary-foreground: 140 25% 95%;
+    --muted: 150 15% 15%;
+    --muted-foreground: 140 12% 64%;
+    --accent: 150 17% 20%;
+    --accent-foreground: 140 25% 95%;
     --destructive: 2 70% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 24 9% 24%;
-    --input: 24 9% 24%;
-    --ring: 24 95% 56%;
+    --border: 150 14% 22%;
+    --input: 150 14% 22%;
+    --ring: 145 60% 50%;
   }
 
   * {

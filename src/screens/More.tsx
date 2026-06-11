@@ -38,7 +38,7 @@ export function More() {
 
       {/* The Menu — auto-generated from the scoring tables (spec §7.7) */}
       <section className="mt-4 rounded-card bg-card text-card-foreground shadow-sm p-4">
-        <h2 className="font-display text-xl">The Menu 🍽️</h2>
+        <h2 className="font-display text-xl font-bold">The Menu</h2>
         <p className="text-sm mt-1 text-muted-foreground">How points are cooked — straight from the scoring tables.</p>
 
         <h3 className="mt-3 font-display text-lg">Per match</h3>
@@ -94,14 +94,14 @@ export function More() {
       </section>
 
       {/* Prize */}
-      <section className="mt-4 rounded-card bg-gradient-to-r from-orange to-bun text-white p-4 text-center">
+      <section className="mt-4 rounded-card bg-gradient-to-r from-forest to-leaf text-white p-4 text-center">
         <p className="font-display text-2xl text-white">{COPY.motto}</p>
         <p className="text-sm text-white/80 mt-1">The champion&apos;s prize is set by your office admin.</p>
       </section>
 
       {/* Install as app */}
       <section className="mt-4 rounded-card bg-card text-card-foreground shadow-sm p-4">
-        <h2 className="font-display text-lg">Install FoodBall 📲</h2>
+        <h2 className="font-display text-lg font-bold">Install FoodBall</h2>
         <p className="text-sm mt-1 text-muted-foreground">Add it to your home screen — it runs full-screen, like a real app.</p>
         <ul className="mt-2 text-sm list-disc list-inside space-y-1">
           <li><strong>iPhone (Safari):</strong> Share → “Add to Home Screen”.</li>

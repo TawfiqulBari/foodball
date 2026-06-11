@@ -74,16 +74,26 @@ export function Guide({ firstRun = false, onStart }: { firstRun?: boolean; onSta
         Predict the World Cup, earn points (never money), and feast. Here’s the 60-second tour.
       </p>
 
-      {/* Animated guide */}
-      <div className="mt-3 overflow-hidden rounded-card border border-border bg-card shadow-sm">
-        <video
-          className="aspect-video w-full bg-black"
-          src="/guide.mp4"
-          poster="/branding/foodball-badge.png"
-          controls
-          playsInline
-          preload="metadata"
-        />
+      {/* Animated guide — autoplays muted on load; capped width so it isn't a
+          giant block on desktop, with an obvious "video" caption + poster. */}
+      <div className="mx-auto mt-3 w-full max-w-lg">
+        <p className="mb-1 flex flex-wrap items-center gap-x-2 font-display text-sm text-primary">
+          ▶ Watch: How to play FoodBall
+          <span className="font-body text-xs font-normal text-muted-foreground">· 35s, no sound</span>
+        </p>
+        <div className="overflow-hidden rounded-card border-2 border-primary/30 bg-black shadow-lg">
+          <video
+            className="aspect-video w-full"
+            src="/guide.mp4"
+            poster="/guide-poster.png"
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+            preload="auto"
+          />
+        </div>
       </div>
 
       <ol className="mt-4 space-y-3">

@@ -30,6 +30,10 @@ export default {
         lettuce: '#7CC243',
         tomato: '#E2504C',
         orange: '#F97316',
+        // Green template accents (reference palette).
+        forest: '#0E3A22',
+        leaf: '#1FA85A',
+        lime: '#A3E635',
       },
       borderRadius: {
         card: 'var(--radius)',
@@ -38,8 +42,8 @@ export default {
         sm: 'calc(var(--radius) - 8px)',
       },
       fontFamily: {
-        display: ['"Luckiest Guy"', 'cursive'],
-        body: ['Nunito', 'system-ui', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
       },
       minHeight: { tap: '44px' },
       minWidth: { tap: '44px' },

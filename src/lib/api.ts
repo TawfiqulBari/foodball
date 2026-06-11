@@ -3,6 +3,7 @@ import type {
   DecayRow,
   LeaderboardRow,
   Market,
+  MatchCommentary,
   MatchPick,
   MatchRow,
   Outcome,
@@ -105,6 +106,34 @@ export async function fetchProfilesByIds(ids: string[]): Promise<Map<string, Pro
   const { data, error } = await supabase.from('profiles').select('*').in('id', ids)
   if (error) throw error
   return new Map((data ?? []).map((p) => [p.id, p]))
+}
+
+// ─── Live commentary ─────────────────────────────────────────────────────────
+
+export async function fetchCommentary(matchId: number): Promise<MatchCommentary[]> {
+  const { data, error } = await supabase
+    .from('match_commentary')
+    .select('*')
+    .eq('match_id', matchId)
+    .order('created_at', { ascending: false })
+    .limit(60)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function adminPostCommentary(
+  matchId: number,
+  body: string,
+  minute?: number | null,
+  kind = 'note',
+): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_post_commentary', {
+    p_match_id: matchId,
+    p_body: body,
+    p_minute: minute ?? null,
+    p_kind: kind,
+  })
+  if (error) throw error
 }
 
 // ─── Reference data ──────────────────────────────────────────────────────────

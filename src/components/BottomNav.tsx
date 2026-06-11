@@ -1,12 +1,14 @@
+import { BookOpen, ClipboardList, Goal, Menu, Settings, Trophy, Tv2, type LucideIcon } from 'lucide-react'
+
 export type Tab = 'matches' | 'matchday' | 'leaderboard' | 'mypicks' | 'guide' | 'more' | 'admin'
 
-const TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: 'matches', label: 'Matches', icon: '⚽' },
-  { key: 'matchday', label: 'Stadium', icon: '🏟️' },
-  { key: 'leaderboard', label: 'Food Chain', icon: '🍽️' },
-  { key: 'mypicks', label: 'Picks', icon: '📋' },
-  { key: 'guide', label: 'Guide', icon: '📖' },
-  { key: 'more', label: 'More', icon: '🍔' },
+const TABS: { key: Tab; label: string; Icon: LucideIcon }[] = [
+  { key: 'matches', label: 'Matches', Icon: Goal },
+  { key: 'matchday', label: 'Stadium', Icon: Tv2 },
+  { key: 'leaderboard', label: 'Food Chain', Icon: Trophy },
+  { key: 'mypicks', label: 'Picks', Icon: ClipboardList },
+  { key: 'guide', label: 'Guide', Icon: BookOpen },
+  { key: 'more', label: 'More', Icon: Menu },
 ]
 
 export function BottomNav({
@@ -18,38 +20,42 @@ export function BottomNav({
   onChange: (t: Tab) => void
   isAdmin: boolean
 }) {
-  const tabs = isAdmin ? [...TABS, { key: 'admin' as Tab, label: 'Admin', icon: '🛠️' }] : TABS
+  const tabs = isAdmin ? [...TABS, { key: 'admin' as Tab, label: 'Admin', Icon: Settings }] : TABS
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-20 bg-card/95 backdrop-blur border-t border-border shadow-[0_-2px_14px_rgba(0,0,0,0.10)] pb-[env(safe-area-inset-bottom)]">
-      <ul className="flex">
-        {tabs.map((t) => (
-          <li key={t.key} className="flex-1">
-            <button
-              type="button"
-              onClick={() => onChange(t.key)}
-              className="group w-full flex items-stretch justify-center px-0.5 py-1.5 font-body"
-              aria-current={active === t.key ? 'page' : undefined}
-            >
-              <span
-                className={`flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition ${
-                  active === t.key
-                    ? 'bg-gradient-to-b from-orange to-tomato text-white shadow-md'
-                    : 'text-muted-foreground group-hover:text-foreground'
-                }`}
+    <nav className="fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+      <ul className="mx-auto flex max-w-2xl">
+        {tabs.map((t) => {
+          const on = active === t.key
+          return (
+            <li key={t.key} className="flex-1">
+              <button
+                type="button"
+                onClick={() => onChange(t.key)}
+                aria-current={on ? 'page' : undefined}
+                className="group flex w-full flex-col items-center justify-center gap-1 px-0.5 py-2 font-body"
               >
                 <span
-                  className={`text-3xl leading-none transition-transform duration-150 group-hover:scale-125 group-active:scale-110 ${
-                    active === t.key ? 'scale-110' : ''
+                  className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${
+                    on ? 'bg-primary/15 text-primary' : 'text-muted-foreground group-hover:text-foreground'
                   }`}
-                  aria-hidden
                 >
-                  {t.icon}
+                  <t.Icon
+                    size={22}
+                    strokeWidth={on ? 2.4 : 2}
+                    className="transition-transform duration-150 group-hover:scale-125 group-active:scale-110"
+                  />
                 </span>
-                <span className="w-full truncate text-center text-[11px] font-bold leading-tight">{t.label}</span>
-              </span>
-            </button>
-          </li>
-        ))}
+                <span
+                  className={`w-full truncate text-center text-[10px] font-semibold leading-none ${
+                    on ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  {t.label}
+                </span>
+              </button>
+            </li>
+          )
+        })}
       </ul>
     </nav>
   )

@@ -10,6 +10,7 @@ import {
   type Side,
 } from '../lib/matchField'
 import { MatchPitch } from '../components/MatchPitch'
+import { CommentaryFeed } from '../components/CommentaryFeed'
 import { kickoffLabel } from '../lib/format'
 import { COPY } from '../lib/copy'
 
@@ -111,7 +112,7 @@ export function MatchDay() {
 
   return (
     <div className="px-2 pt-3 pb-24">
-      <h1 className="px-1 font-display text-2xl text-primary">Match Day 🏟️</h1>
+      <h1 className="px-1 font-display text-2xl font-extrabold tracking-tight text-foreground">Match Day</h1>
       <p className="px-1 font-body text-muted-foreground text-sm">Where every chef stands. Goals make the stands erupt.</p>
       {err && <p className="px-1 text-destructive text-sm font-body">{err}</p>}
 
@@ -160,6 +161,7 @@ export function MatchDay() {
             finished={selected.status === 'finished'}
             celebrating={celebrating}
           />
+          <CommentaryFeed matchId={selected.id} />
         </div>
       )}
     </div>
