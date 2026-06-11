@@ -176,13 +176,13 @@ function RoundChips({
   onChange: (k: string) => void
 }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+    <div className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1 -mx-1 px-1">
       {rounds.map((r) => (
         <button
           key={r.key}
           type="button"
           onClick={() => onChange(r.key)}
-          className={`shrink-0 min-h-tap rounded-full px-4 text-sm font-display transition ${
+          className={`shrink-0 snap-start min-h-tap rounded-full px-4 text-sm font-display transition ${
             active === r.key ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground border border-border hover:bg-accent'
           }`}
         >

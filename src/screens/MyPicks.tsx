@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   fetchDecaySchedule,
+  fetchLongshotGrace,
   fetchMyTourneyPicks,
   fetchPlayers,
   fetchRounds,
@@ -36,17 +37,19 @@ export function MyPicks() {
   const [rounds, setRounds] = useState<RoundRow[]>([])
   const [picks, setPicks] = useState<TourneyPick[]>([])
   const [windowOpen, setWindowOpen] = useState(false)
+  const [graceUntil, setGraceUntil] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
   async function reload() {
-    const [t, p, s, r, tp, open] = await Promise.all([
+    const [t, p, s, r, tp, open, grace] = await Promise.all([
       fetchTeams(),
       fetchPlayers(),
       fetchDecaySchedule(),
       fetchRounds(),
       fetchMyTourneyPicks(),
       isRevisionWindowOpen(),
+      fetchLongshotGrace(),
     ])
     setTeams(t)
     setPlayers(p)
@@ -54,6 +57,7 @@ export function MyPicks() {
     setRounds(r)
     setPicks(tp)
     setWindowOpen(open)
+    setGraceUntil(grace)
   }
 
   useEffect(() => {
@@ -73,7 +77,13 @@ export function MyPicks() {
     const done = rounds.filter((r) => r.completed).sort((a, b) => b.sort_order - a.sort_order)
     return done[0]?.key ?? null
   }, [rounds])
-  const nowBucket = decayBucket(latestCompleted)
+  // During the launch grace window, a pick is stamped pre-tournament (full value),
+  // so the "worth N pts" preview should reflect the null bucket too.
+  const graceActive = graceUntil != null && new Date(graceUntil).getTime() > Date.now()
+  const nowBucket = graceActive ? null : decayBucket(latestCompleted)
+  const graceDate = graceUntil
+    ? new Date(graceUntil).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : ''
 
   return (
     <div className="px-4 pt-3 pb-24">
@@ -82,12 +92,18 @@ export function MyPicks() {
 
       <div
         className={`mt-2 rounded-card px-4 py-2 text-sm font-body ${
-          windowOpen ? 'bg-lettuce/20 text-lettuce' : 'bg-card text-muted-foreground shadow-sm border border-border'
+          graceActive
+            ? 'bg-primary/15 text-primary font-semibold'
+            : windowOpen
+              ? 'bg-lettuce/20 text-lettuce'
+              : 'bg-card text-muted-foreground shadow-sm border border-border'
         }`}
       >
-        {windowOpen
-          ? '🔓 Revision window OPEN — change your long shots before the next round kicks off.'
-          : '🔒 Long shots are locked — a round is in progress. They reopen between rounds.'}
+        {graceActive
+          ? `🍳 Kitchen's still open! Set your long shots at full value until ${graceDate}.`
+          : windowOpen
+            ? '🔓 Revision window OPEN — change your long shots before the next round kicks off.'
+            : '🔒 Long shots are locked — a round is in progress. They reopen between rounds.'}
       </div>
 
       {loading ? (

@@ -118,7 +118,7 @@ export function MatchDay() {
 
       {/* Match tabs */}
       {tabs.length > 1 && (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="no-scrollbar mt-3 flex snap-x gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {tabs.map((m) => {
             const h = teams.get(m.home_team)
             const a = teams.get(m.away_team)

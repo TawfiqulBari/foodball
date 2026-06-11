@@ -207,6 +207,23 @@ export async function isRevisionWindowOpen(): Promise<boolean> {
   return Boolean(data)
 }
 
+/** The long-shot launch-grace cut-off (ISO) or null. While now() < this, long
+ *  shots are open to everyone at full pre-tournament value. */
+export async function fetchLongshotGrace(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('longshot_grace_until')
+    .eq('id', true)
+    .maybeSingle()
+  if (error) throw error
+  return data?.longshot_grace_until ?? null
+}
+
+export async function adminSetLongshotGrace(until: string | null): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_set_longshot_grace', { p_until: until })
+  if (error) throw error
+}
+
 // ─── Profile (onboarding + avatar) ───────────────────────────────────────────
 
 export async function updateProfile(

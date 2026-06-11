@@ -3,12 +3,14 @@ import { z } from 'zod'
 import { useAuth } from '../auth/AuthProvider'
 import {
   adminPostCommentary,
+  adminSetLongshotGrace,
   adminSetResult,
   adminSetTournamentResult,
   adminSetUnderdog,
   adminSettleRound,
   adminUpdateDecay,
   fetchDecaySchedule,
+  fetchLongshotGrace,
   fetchMatches,
   fetchPlayers,
   fetchRounds,
@@ -54,7 +56,7 @@ export function Admin() {
         {msg && <p className="mt-2 text-lettuce text-sm">{msg}</p>}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto">
+      <div className="no-scrollbar flex gap-2 overflow-x-auto">
         {rounds.map((r) => (
           <button
             key={r.key}
@@ -69,6 +71,9 @@ export function Admin() {
           </button>
         ))}
       </div>
+
+      {/* Launch tools: long-shot grace window + celebration smoke test */}
+      <LaunchTools onSaved={setMsg} />
 
       {/* Results + underdog */}
       <section>
@@ -97,6 +102,87 @@ export function Admin() {
       {/* Decay editor */}
       <DecayEditor onSaved={setMsg} />
     </div>
+  )
+}
+
+function toLocalInput(iso: string): string {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function LaunchTools({ onSaved }: { onSaved: (m: string) => void }) {
+  const [until, setUntil] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    fetchLongshotGrace()
+      .then((g) => g && setUntil(toLocalInput(g)))
+      .catch(() => {})
+  }, [])
+
+  async function save(clear: boolean) {
+    setBusy(true)
+    try {
+      await adminSetLongshotGrace(clear ? null : until ? new Date(until).toISOString() : null)
+      onSaved(clear ? 'Long-shot grace cleared.' : 'Long-shot grace window saved.')
+      if (clear) setUntil('')
+    } catch (e) {
+      onSaved(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section>
+      <h2 className="font-display text-lg text-primary">Launch tools</h2>
+      <div className="mt-2 space-y-3 rounded-card border border-border bg-card p-3 text-foreground shadow-sm">
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground">Long-shot grace — full value until</label>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <input
+              type="datetime-local"
+              value={until}
+              onChange={(e) => setUntil(e.target.value)}
+              className="min-h-tap rounded-lg border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              type="button"
+              disabled={busy || !until}
+              onClick={() => void save(false)}
+              className="min-h-tap rounded-lg bg-primary px-3 font-display text-sm text-primary-foreground active:scale-95 disabled:opacity-50"
+            >
+              Set
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void save(true)}
+              className="min-h-tap rounded-lg border border-border px-3 text-sm text-muted-foreground active:scale-95"
+            >
+              Clear
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            While active, everyone can set/change tournament long shots at full pre-tournament value.
+          </p>
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('fb:test-celebration'))}
+            className="min-h-tap rounded-lg bg-primary px-4 font-display text-sm text-primary-foreground active:scale-95"
+          >
+            Test celebration overlays
+          </button>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Plays Chef’s Kiss → Full Course → Spicy ×2 → Burnt Toast locally (no DB write) to verify queueing + reduced-motion.
+          </p>
+        </div>
+      </div>
+    </section>
   )
 }
 

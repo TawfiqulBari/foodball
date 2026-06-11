@@ -68,6 +68,34 @@ export function ResultMoments() {
     }
   }, [session, scan])
 
+  // Admin smoke test: play each overlay variant in sequence, no DB write. Fired by
+  // the "Test celebration" button via a window event. Unique negative ids per click
+  // avoid AnimatePresence key collisions and never touch real match ids.
+  useEffect(() => {
+    function onTest() {
+      const ids = [...teams.keys()]
+      const a = ids[0] ?? 0
+      const b = ids[1] ?? 0
+      const base = -Date.now()
+      const make = (
+        i: number,
+        kind: ResultMoment['kind'],
+        points: number,
+        hs: number,
+        as_: number,
+      ): ResultMoment => ({ matchId: base - i, kind, points, homeTeam: a, awayTeam: b, homeScore: hs, awayScore: as_ })
+      setQueue((prev) => [
+        ...prev,
+        make(1, 'chefs_kiss', 10, 1, 0),
+        make(2, 'full_course', 35, 2, 1),
+        make(3, 'spicy', 20, 1, 2),
+        make(4, 'burnt_toast', 0, 0, 1),
+      ])
+    }
+    window.addEventListener('fb:test-celebration', onTest)
+    return () => window.removeEventListener('fb:test-celebration', onTest)
+  }, [teams])
+
   if (queue.length === 0) return null
   const current = queue[0]!
   const code = (id: number) => teams.get(id)?.fifa_code ?? '?'

@@ -163,6 +163,11 @@ export interface Database {
         Insert: Partial<MatchCommentary> & { match_id: number; body: string }
         Update: Partial<MatchCommentary>
       }
+      settings: {
+        Row: { id: boolean; longshot_grace_until: string | null }
+        Insert: { id?: boolean; longshot_grace_until?: string | null }
+        Update: Partial<{ longshot_grace_until: string | null }>
+      }
     }
     Views: {
       leaderboard: { Row: LeaderboardRow }
@@ -190,6 +195,8 @@ export interface Database {
         Args: { p_match_id: number; p_body: string; p_minute?: number | null; p_kind?: string }
         Returns: number
       }
+      fb_admin_set_longshot_grace: { Args: { p_until: string | null }; Returns: void }
+      fb_longshot_grace_active: { Args: Record<string, never>; Returns: boolean }
       fb_tourney_revision_open: { Args: Record<string, never>; Returns: boolean }
     }
   }
