@@ -8,7 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 fun layer), and M5 (the optional Remotion recap) are all built and their acceptance
 checklists pass.** The product is feature-complete against the spec; remaining work
 is deploy wiring (see below), not features. When extending, keep verifying each
-milestone's acceptance checklist (spec §9) and re-running the test suites. The canonical source of truth remains
+milestone's acceptance checklist (spec §9) and re-running the test suites. See
+`session_status.md` for the latest run/verify snapshot + the deploy-wiring to-do. The canonical source of truth remains
 `plans/worldcup-league-claude-code-prompt.md` — read it before extending. Brand
 assets live in `plans/` and `public/branding/` (+ a `/branding/` copy the spec expects).
 
