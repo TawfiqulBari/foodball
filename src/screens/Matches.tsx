@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
+import { supabase } from '../lib/supabase'
 import {
   fetchMatches,
   fetchMyPicks,
@@ -49,15 +50,27 @@ export function Matches() {
   }, [])
 
   useEffect(() => {
+    let alive = true
     setLoading(true)
-    Promise.all([fetchMatches(activeRound), fetchMyPicks(), fetchMyRoundProps(activeRound)])
-      .then(([m, p, rp]) => {
-        setMatches(m)
-        setPicks(p)
-        setProps(rp)
-      })
-      .catch((e) => setErr(String(e)))
-      .finally(() => setLoading(false))
+    const loadMatches = () => fetchMatches(activeRound).then((m) => alive && setMatches(m))
+    Promise.all([loadMatches(), fetchMyPicks().then((p) => alive && setPicks(p)), fetchMyRoundProps(activeRound).then((rp) => alive && setProps(rp))])
+      .catch((e) => alive && setErr(String(e)))
+      .finally(() => alive && setLoading(false))
+
+    // Live scores (spec §7.3): refetch this round's matches when any match row
+    // changes. Hosted Supabase publishes `matches` in M3; no-op locally.
+    const channel = supabase
+      .channel(`matches-${activeRound}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'matches', filter: `round_key=eq.${activeRound}` },
+        () => void loadMatches(),
+      )
+      .subscribe()
+    return () => {
+      alive = false
+      void supabase.removeChannel(channel)
+    }
   }, [activeRound])
 
   const round = useMemo(() => rounds.find((r) => r.key === activeRound), [rounds, activeRound])

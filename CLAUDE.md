@@ -2,14 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current state: Milestones 1–2 built & verified
+## Current state: Milestones 1–3 built & verified
 
-**M1 (core loop) and M2 (full markets + avatars) are built and their acceptance
-checklists pass.** Work **milestone by milestone (M1→M5)**, verifying each
-milestone's acceptance checklist (spec §9) before the next. The canonical source
-of truth remains `plans/worldcup-league-claude-code-prompt.md` — read it before
-extending. Brand assets live in `plans/` and `public/branding/` (+ a `/branding/`
-copy the spec expects).
+**M1 (core loop), M2 (full markets + avatars), and M3 (auto-sync + realtime) are
+built and their acceptance checklists pass.** Work **milestone by milestone
+(M1→M5)**, verifying each milestone's acceptance checklist (spec §9) before the
+next. The canonical source of truth remains
+`plans/worldcup-league-claude-code-prompt.md` — read it before extending. Brand
+assets live in `plans/` and `public/branding/` (+ a `/branding/` copy the spec expects).
 
 What exists now:
 - **Frontend** — Vite + React 18 + TS (strict) + Tailwind in `src/` (screens:
@@ -20,33 +20,40 @@ What exists now:
   markets (exact-score/BTTS/over-under + the upset ×2), the three round props,
   tournament-long picks with decay + revision window + history, the DiceBear avatar
   builder/onboarding + avatars on the leaderboard, an installable **PWA**, and a
-  "The Menu" rules page generated from the scoring tables.
-- **Database** — `supabase/migrations/0001_init.sql` (M1 schema + RLS + pick-lock
-  trigger + outcome scoring + admin RPCs) and `0002_m2_markets_props_decay.sql`
-  (all-market scoring, round-prop settlement, tournament decay scoring, the
-  server-enforced revision-window trigger + `fb_set_tourney_pick` RPC, decay
-  helpers mirroring `src/lib/decay.ts`). `supabase/seed.sql` seeds fixtures + the
-  §4.3 decay table. **Local Docker mounts 0002 as `01b_m2.sql` (see compose).**
-- **Server acceptance tests** — `supabase/tests/core_loop_test.sql` (M1) and
-  `m2_markets_props_decay_test.sql` (M2: all markets, props, decay, and the crux —
-  a revision outside an open window rejected server-side via RPC *and* raw insert).
-  **Run both after any change to the schema or scoring.**
+  "The Menu" rules page generated from the scoring tables. **M3 added:** a live
+  Realtime leaderboard + live-score display + rank-change arrows (`rank_delta`).
+- **Database** — `supabase/migrations/` `0001_init.sql` (M1 schema + RLS + pick-lock
+  trigger + outcome scoring), `0002_m2_markets_props_decay.sql` (all-market scoring,
+  round-prop settlement, tournament decay scoring, revision-window trigger +
+  `fb_set_tourney_pick`, decay helpers mirroring `src/lib/decay.ts`), and
+  `0003_m3_autosync_realtime.sql` (`fb_ingest_result` with manual precedence + auto
+  scoring, `rank_history` + `rank_delta`, the Realtime publication). `supabase/seed.sql`
+  seeds fixtures + the §4.3 decay table. **Local Docker mounts the M2/M3 migrations
+  as `01b_m2.sql` / `01c_m3.sql` (see compose).**
+- **Server acceptance tests** — `core_loop_test.sql` (M1),
+  `m2_markets_props_decay_test.sql` (M2: markets, props, decay, the revision-window
+  crux via RPC *and* raw insert), and `m3_autosync_test.sql` (M3: a simulated API
+  payload settles end-to-end with no admin action; a manual result is not overwritten).
+  **Run all three after any change to the schema or scoring.**
 - **Decay math (mandatory Vitest)** — `src/lib/decay.ts` + `decay.test.ts` verify
   every cell of spec §4.3; `src/lib/scoring.ts` holds the fixed market/prop point
   values The Menu renders (mirrors the SQL scorer).
 - **Hardened Docker run** — `Dockerfile` + `docker-compose.yml` + `docker/`.
   `docker/db-init/` is a *local-only* shim that lets the identical migrations run
   on stock Postgres (Supabase provides `auth`/`auth.uid()`/roles natively).
-- **Edge function** — `supabase/functions/sync-fixtures/` (football-data.org →
-  openfootball fallback, Zod-validated, idempotent).
+- **Edge functions** — `supabase/functions/sync-fixtures/` (daily fixture upsert)
+  and `sync-results/` (M3: polls live scores/results → `fb_ingest_result`; admin-JWT
+  or `SYNC_SECRET`-gated; football-data.org→openfootball fallback, Zod-validated).
 - Security control mapping in `docs/SECURITY.md`; how-to-run in `docs/RUNNING.md`.
 
-Not yet built (later milestones): **M3** auto-sync cron (`sync-results`) + live
-scores + Realtime leaderboard + materialized leaderboard view; **M4** result-moment
-overlays (`framer-motion`/`lottie`); **M5** the Remotion `/recap` package. Tournament
-settlement (champion/finalists/awards) is admin-entered today; M3 wires the auto
-pipeline. Squad data (`players_catalog`) is empty until a squads sync exists, so
-Clean Plate / Top Chef / Golden Boot pickers stay empty until then.
+Not yet built (later milestones): **M4** result-moment overlays
+(`framer-motion`/`lottie`, queueing, reduced-motion, podium/rivals); **M5** the
+Remotion `/recap` package. Also not yet wired: the `pg_cron` schedule that calls
+`sync-results` (the function + RPC exist and are tested; the cron entry is a deploy
+step — see the header of `sync-results/index.ts`). Tournament settlement
+(champion/finalists/awards) and knockout ET/penalty winners are **admin-entered**
+(the API poll never overwrites them). Squad data (`players_catalog`) is empty until
+a squads sync exists, so Clean Plate / Top Chef / Golden Boot pickers stay empty until then.
 
 ## What FoodBall is
 
@@ -69,11 +76,11 @@ This is the **approved dependency allow-list**; don't add anything outside it wi
 
 The big picture that spans many files:
 
-- **Scoring is server-authoritative. The client never computes authoritative points.** All scoring lives in Postgres functions / Supabase Edge Functions. The data model centers on a `score_events` ledger kept idempotent by upsert on `(source_table, source_id)` — re-scoring updates a row in place, never duplicates. `leaderboard` is a `security_invoker` VIEW in M1 (always consistent); M3 swaps in a materialized view + Realtime. See spec §5 for the full schema and §6 for the sync/scoring functions.
+- **Scoring is server-authoritative. The client never computes authoritative points.** All scoring lives in Postgres functions / Supabase Edge Functions. The data model centers on a `score_events` ledger kept idempotent by upsert on `(source_table, source_id)` — re-scoring updates a row in place, never duplicates. `leaderboard` is a **`security_invoker` VIEW** (always consistent, fast enough for ~50 players); M3 added `rank_delta` from a per-round `rank_history` snapshot + Realtime push, and intentionally **kept the view rather than a materialized view** (a matview's REFRESH/RLS friction isn't worth it at this scale — revisit only if the player count grows). See spec §5 for the full schema and §6 for the sync/scoring functions.
 - **Pick-locking is enforced server-side, never on the client clock.** A pick becomes immutable once its lock time passes, enforced via Postgres RLS + a `before insert/update` trigger comparing against the kickoff/round time stored in the DB. The M1 checklist explicitly requires that a post-kickoff pick is rejected even when the client UI is bypassed (test with a raw REST call).
 - **The "round" concept (MD1, MD2, MD3, R32, R16, QF, SF, F) drives lock and revision windows.** Only the round *keys* are hardcoded; all dates/fixtures are seeded from the API at setup time, not hardcoded. A round completes when all its matches have final results, which settles round props and opens the tournament-pick revision window.
 - **Three prediction tiers** (spec §4): per-match markets (lock at kickoff), per-round props (lock at round's first kickoff), and revisable tournament-long picks whose point value **decays** based on when the currently-held pick was last set. Decay values live in a `decay_schedule` DB table so the admin can tune them without code changes — read points from there, don't hardcode.
-- **Results sync pipeline** (spec §6). *Built:* `sync-fixtures` (daily upsert, idempotent by `api_match_id`, football-data.org→openfootball fallback, Zod-validated) + admin manual entry via `fb_admin_set_result`, which calls `fb_score_match` (all four per-match markets as of M2) and cascades into round-prop settlement (`fb_score_round`) when a round completes; tournament-long picks settle via the admin `fb_admin_set_tournament_result` RPC. *Planned for M3:* `sync-results` (`pg_cron` every 5 min, only inside match windows) → auto-invoke scoring → tournament settle. **Manual admin entries always win over API** (`result_source='manual'`; sync skips manually-finalized matches).
+- **Results sync pipeline** (spec §6). *Built:* `sync-fixtures` (daily upsert, idempotent by `api_match_id`) and `sync-results` (polls scores → the `fb_ingest_result` RPC, which auto-scores a match the instant it flips to `finished` — no admin action — and cascades into round-prop settlement via `fb_score_match`/`fb_score_round`). Admin manual entry via `fb_admin_set_result`; tournament-long picks settle via `fb_admin_set_tournament_result`. **Manual always wins over API** — `fb_ingest_result` skips a match whose `result_source='manual'` and `status='finished'`. *Deploy step (not code):* the `pg_cron` entry that calls `sync-results` every 5 min — see `sync-results/index.ts`.
 - **RLS visibility rule:** everyone can read everything *after* lock time (it's a social game), but a pick is visible only to its owner *before* its lock time (prevents copying). Inserts/updates are own-rows-only and only before lock; `is_admin` bypasses.
 
 ## Validation & testing

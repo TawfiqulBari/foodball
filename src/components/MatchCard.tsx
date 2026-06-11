@@ -25,6 +25,7 @@ export function MatchCard({
   const away = teams.get(match.away_team)
   const locked = isLocked(match.kickoff)
   const finished = match.status === 'finished'
+  const liveNow = match.status === 'live'
   const underdogIsHome = match.underdog_team === match.home_team
   const underdogIsAway = match.underdog_team === match.away_team
 
@@ -59,6 +60,8 @@ export function MatchCard({
         </span>
         {finished ? (
           <span className="font-semibold text-navy">FT</span>
+        ) : liveNow ? (
+          <span className="font-semibold text-tomato animate-pulse">● LIVE</span>
         ) : locked ? (
           <span className="font-semibold text-tomato">Locked</span>
         ) : (
@@ -71,9 +74,9 @@ export function MatchCard({
           {home?.flag_emoji} {home?.fifa_code}
           {underdogIsHome && <Tag />}
         </span>
-        {finished ? (
-          <span className="px-2 text-2xl">
-            {match.home_score}–{match.away_score}
+        {finished || liveNow ? (
+          <span className={`px-2 text-2xl ${liveNow ? 'text-tomato' : ''}`}>
+            {match.home_score ?? 0}–{match.away_score ?? 0}
           </span>
         ) : (
           <span className="px-2 text-navy/40">vs</span>
