@@ -52,7 +52,11 @@ What exists now:
   `0012_live_atmosphere.sql` (pg_cron `foodball-live-atmosphere`: brand-voice colour
   lines for live matches, always quoting the true score), `0013_pick_lock_hardening.sql`
   (audit fixes: finished-match guard unconditional; client `points_awarded` neutralized
-  on INSERT for match + round-prop picks). `supabase/seed.sql` seeds reference data +
+  on INSERT for match + round-prop picks), and `0014_openfootball_results_sync.sql`
+  (token-free auto-settle: the `http` extension fetches openfootball in-DB and pg_cron
+  `foodball-openfootball-sync` settles finished group matches via `fb_ingest_result` —
+  `fb_settle_from_openfootball_json(jsonb)` is the pure, testable core; manual results
+  always win; inert where `http` is unavailable). `supabase/seed.sql` seeds reference data +
   the §4.3 decay table. **Local Docker mounts the M2/M3 migrations as `01b_m2.sql` /
   `01c_m3.sql` (see compose); the CLI/hosted stack applies all of `supabase/migrations/`.**
   Apply a new migration to the live stack with
@@ -62,10 +66,12 @@ What exists now:
   `m2_markets_props_decay_test.sql` (M2: markets, props, decay, the revision-window
   crux via RPC *and* raw insert), `m3_autosync_test.sql` (M3: a simulated API
   payload settles end-to-end with no admin action; a manual result is not overwritten),
-  and `m_grace_test.sql` (the three grace windows + `0013` lock-hardening: grace ON
+  `m_grace_test.sql` (the three grace windows + `0013` lock-hardening: grace ON
   allows a post-kickoff still-playable pick, grace OFF locks it, a finished match is
   never pickable incl. the future-kickoff edge, forged `points_awarded` neutralized on
-  INSERT, grace independence). **Run after any change to the schema or scoring.**
+  INSERT, grace independence), and `m_openfootball_sync_test.sql` (`0014`: a published
+  openfootball score self-settles + scores a match with no admin action; a manual result
+  is never overwritten). **Run after any change to the schema or scoring.**
   *Caveat:* `core_loop`/`m2`/`m3` need `SEED-*` fixtures that exist only in the Docker
   test harness (`foodball-db-1`) — rebuild its volume (`down -v && up -d --build`) to
   run them; `m_grace_test.sql` runs against the live CLI stack (`supabase_db_foodball`)

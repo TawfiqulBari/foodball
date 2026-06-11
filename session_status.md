@@ -47,6 +47,12 @@ Foundation (earlier in the build):
 - **Live commentary** (`0006`) + **atmosphere ticker** (`0012`, pg_cron
   `foodball-live-atmosphere`): real event lines (kickoff/goal/FT) plus token-free
   brand-voice colour lines for live matches (always quoting the true score).
+- **Token-free auto-settle** (`0014`, pg_cron `foodball-openfootball-sync`): the in-DB
+  `http` extension fetches openfootball every 10 min and settles finished group matches
+  via `fb_ingest_result` (scores picks, settles round props, fires goal/FT commentary) —
+  no token, no admin action. Manual results always win; pure core
+  `fb_settle_from_openfootball_json(jsonb)` is unit-tested. Inert until openfootball
+  publishes scores (the 2026 file is fixtures-only for now).
 - **UI**: green shadcn-style theme (light/dark) + professional type/icons; first-run
   + bottom-nav **guide** (+ Remotion `guide.mp4`); accurate **home jerseys for all 48
   nations** (`src/lib/kits.ts`, incl. a Croatia checker pattern); **live match clock**
@@ -132,12 +138,14 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
 
 ## Remaining
 
-- **Live scores (the one real gap).** Either (a) provide a `football-data.org` token
-  and wire the `sync-results` cron for auto-scores (caveat: free tier may not cover
-  WC2026), (b) build a token-free **openfootball final-score sync** (settles matches
-  once openfootball records them — lags real time, no play-by-play), or (c) keep
-  **admin entry** (works now; instant goal commentary + overlays). Recommend (c) live +
-  optionally (b) for hands-off settling.
+- **Live scores.** Mostly handled now: matches go live on time (`foodball-auto-live`)
+  and **self-settle from openfootball** (`foodball-openfootball-sync`, `0014`) once it
+  publishes a final — no token, no admin action. Two notes: openfootball's 2026 file is
+  fixtures-only until volunteers add scores (lags real time, no minute-by-minute), and
+  **admin entry remains the instant path** (Admin → set result → goal commentary +
+  overlays immediately; always wins over openfootball). A `football-data.org` token
+  could add faster/live scores via the existing `sync-results` function, but its free
+  tier may not cover WC2026.
 - **Knockout fixtures** — added once group standings decide the teams (the importer
   only does the 72 group games; knockout slots are placeholders in openfootball).
 - **Squads sync** to populate `players_catalog` — until then Clean Plate / Top Chef /
@@ -154,7 +162,8 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
   the version in `supabase_migrations.schema_migrations`.
 - **pg_cron jobs** on the live stack: `foodball-sync-results` (every 5m, inert without
   a token), `foodball-auto-live` (every 1m, token-free live flip), `foodball-live-atmosphere`
-  (every 2m, brand-voice colour lines for live matches).
+  (every 2m, brand-voice colour lines for live matches), `foodball-openfootball-sync`
+  (every 10m, token-free final-score auto-settle — `0014`, needs the `http` extension).
 - **Three grace windows** share one `public.settings` row (singleton). Each
   `fb_*_grace_active()` reads only its own column; admin setters are `fb_admin_set_*_grace`.
 - Redeploy the SPA after frontend changes:
