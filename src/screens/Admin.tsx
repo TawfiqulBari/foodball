@@ -5,12 +5,14 @@ import {
   adminPostCommentary,
   adminSetLongshotGrace,
   adminSetResult,
+  adminSetRoundPropsGrace,
   adminSetTournamentResult,
   adminSetUnderdog,
   adminSettleRound,
   adminUpdateDecay,
   fetchDecaySchedule,
   fetchLongshotGrace,
+  fetchRoundPropsGrace,
   fetchMatches,
   fetchPlayers,
   fetchRounds,
@@ -111,21 +113,36 @@ function toLocalInput(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-function LaunchTools({ onSaved }: { onSaved: (m: string) => void }) {
+function GraceControl({
+  label,
+  help,
+  load,
+  store,
+  noun,
+  onSaved,
+}: {
+  label: string
+  help: string
+  load: () => Promise<string | null>
+  store: (until: string | null) => Promise<void>
+  noun: string
+  onSaved: (m: string) => void
+}) {
   const [until, setUntil] = useState('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    fetchLongshotGrace()
+    load()
       .then((g) => g && setUntil(toLocalInput(g)))
       .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function save(clear: boolean) {
     setBusy(true)
     try {
-      await adminSetLongshotGrace(clear ? null : until ? new Date(until).toISOString() : null)
-      onSaved(clear ? 'Long-shot grace cleared.' : 'Long-shot grace window saved.')
+      await store(clear ? null : until ? new Date(until).toISOString() : null)
+      onSaved(clear ? `${noun} cleared.` : `${noun} saved.`)
       if (clear) setUntil('')
     } catch (e) {
       onSaved(e instanceof Error ? e.message : 'Failed')
@@ -135,38 +152,60 @@ function LaunchTools({ onSaved }: { onSaved: (m: string) => void }) {
   }
 
   return (
+    <div>
+      <label className="text-xs font-semibold text-muted-foreground">{label}</label>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <input
+          type="datetime-local"
+          value={until}
+          onChange={(e) => setUntil(e.target.value)}
+          className="min-h-tap rounded-lg border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <button
+          type="button"
+          disabled={busy || !until}
+          onClick={() => void save(false)}
+          className="min-h-tap rounded-lg bg-primary px-3 font-display text-sm text-primary-foreground active:scale-95 disabled:opacity-50"
+        >
+          Set
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void save(true)}
+          className="min-h-tap rounded-lg border border-border px-3 text-sm text-muted-foreground active:scale-95"
+        >
+          Clear
+        </button>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{help}</p>
+    </div>
+  )
+}
+
+function LaunchTools({ onSaved }: { onSaved: (m: string) => void }) {
+  return (
     <section>
       <h2 className="font-display text-lg text-primary">Launch tools</h2>
       <div className="mt-2 space-y-3 rounded-card border border-border bg-card p-3 text-foreground shadow-sm">
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground">Long-shot grace — full value until</label>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <input
-              type="datetime-local"
-              value={until}
-              onChange={(e) => setUntil(e.target.value)}
-              className="min-h-tap rounded-lg border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="button"
-              disabled={busy || !until}
-              onClick={() => void save(false)}
-              className="min-h-tap rounded-lg bg-primary px-3 font-display text-sm text-primary-foreground active:scale-95 disabled:opacity-50"
-            >
-              Set
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void save(true)}
-              className="min-h-tap rounded-lg border border-border px-3 text-sm text-muted-foreground active:scale-95"
-            >
-              Clear
-            </button>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            While active, everyone can set/change tournament long shots at full pre-tournament value.
-          </p>
+        <GraceControl
+          label="Long-shot grace — full value until"
+          help="While active, everyone can set/change tournament long shots at full pre-tournament value."
+          load={fetchLongshotGrace}
+          store={adminSetLongshotGrace}
+          noun="Long-shot grace"
+          onSaved={onSaved}
+        />
+
+        <div className="border-t border-border pt-3">
+          <GraceControl
+            label="Round-specials grace — open until"
+            help="While active, Top Chef / Clean Plate / Spice stay open for everyone even after the round's first kickoff."
+            load={fetchRoundPropsGrace}
+            store={adminSetRoundPropsGrace}
+            noun="Round-specials grace"
+            onSaved={onSaved}
+          />
         </div>
 
         <div className="border-t border-border pt-3">

@@ -224,6 +224,24 @@ export async function adminSetLongshotGrace(until: string | null): Promise<void>
   if (error) throw error
 }
 
+/** The round-specials launch-grace cut-off (ISO) or null. While now() < this,
+ *  round props (Top Chef / Clean Plate / Spice) stay open despite a passed
+ *  kickoff — used because the league launched after MD1 had already started. */
+export async function fetchRoundPropsGrace(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('round_props_grace_until')
+    .eq('id', true)
+    .maybeSingle()
+  if (error) throw error
+  return data?.round_props_grace_until ?? null
+}
+
+export async function adminSetRoundPropsGrace(until: string | null): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_set_round_props_grace', { p_until: until })
+  if (error) throw error
+}
+
 // ─── Profile (onboarding + avatar) ───────────────────────────────────────────
 
 export async function updateProfile(

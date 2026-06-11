@@ -164,9 +164,9 @@ export interface Database {
         Update: Partial<MatchCommentary>
       }
       settings: {
-        Row: { id: boolean; longshot_grace_until: string | null }
-        Insert: { id?: boolean; longshot_grace_until?: string | null }
-        Update: Partial<{ longshot_grace_until: string | null }>
+        Row: { id: boolean; longshot_grace_until: string | null; round_props_grace_until: string | null }
+        Insert: { id?: boolean; longshot_grace_until?: string | null; round_props_grace_until?: string | null }
+        Update: Partial<{ longshot_grace_until: string | null; round_props_grace_until: string | null }>
       }
     }
     Views: {
@@ -197,6 +197,8 @@ export interface Database {
       }
       fb_admin_set_longshot_grace: { Args: { p_until: string | null }; Returns: void }
       fb_longshot_grace_active: { Args: Record<string, never>; Returns: boolean }
+      fb_admin_set_round_props_grace: { Args: { p_until: string | null }; Returns: void }
+      fb_round_props_grace_active: { Args: Record<string, never>; Returns: boolean }
       fb_tourney_revision_open: { Args: Record<string, never>; Returns: boolean }
     }
   }

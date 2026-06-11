@@ -12,6 +12,8 @@ export function RoundPropsCard({
   players,
   myProps,
   onSubmit,
+  graceActive = false,
+  graceUntil = null,
 }: {
   roundFirstKickoff: string | null
   matches: MatchRow[]
@@ -19,10 +21,14 @@ export function RoundPropsCard({
   players: PlayerCatalog[]
   myProps: Map<Prop, RoundProp>
   onSubmit: (prop: Prop, selection: string) => Promise<void>
+  /** Launch grace: keep round specials open despite a passed kickoff. */
+  graceActive?: boolean
+  graceUntil?: string | null
 }) {
   const [busy, setBusy] = useState<Prop | null>(null)
   const [err, setErr] = useState<string | null>(null)
-  const locked = roundFirstKickoff ? isLocked(roundFirstKickoff) : false
+  // Grace overrides the kickoff lock during the late-launch window.
+  const locked = graceActive ? false : roundFirstKickoff ? isLocked(roundFirstKickoff) : false
   const keepers = players.filter((p) => (p.position ?? '').toUpperCase().startsWith('G'))
   const upsetMatches = matches.filter((m) => m.underdog_team)
 
@@ -55,6 +61,17 @@ export function RoundPropsCard({
       <p className="text-xs font-body text-muted-foreground">
         Lock at the round's first kickoff. Settle when the round finishes.
       </p>
+
+      {graceActive && (
+        <div className="mt-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
+          <p className="text-xs font-body text-foreground">
+            🍳 <span className="font-bold">Kitchen's still open!</span> We launched mid-round, so the
+            specials stay open
+            {graceUntil ? ` until ${new Date(graceUntil).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
+            {' '}— set them now, no penalty.
+          </p>
+        </div>
+      )}
 
       <PropRow
         title={`${COPY.spice} (20)`}

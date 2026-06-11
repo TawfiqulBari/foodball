@@ -7,6 +7,7 @@ import {
   fetchMyPicks,
   fetchMyRoundProps,
   fetchPlayers,
+  fetchRoundPropsGrace,
   fetchRounds,
   fetchTeams,
   submitMatchPick,
@@ -36,20 +37,27 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
   const [matches, setMatches] = useState<MatchRow[]>([])
   const [picks, setPicks] = useState<Map<string, MatchPick>>(new Map())
   const [props, setProps] = useState<Map<Prop, RoundProp>>(new Map())
+  const [propsGraceUntil, setPropsGraceUntil] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([fetchRounds(), fetchTeams(), fetchPlayers()])
-      .then(([r, t, p]) => {
+    Promise.all([fetchRounds(), fetchTeams(), fetchPlayers(), fetchRoundPropsGrace()])
+      .then(([r, t, p, grace]) => {
         setRounds(r)
         setTeams(t)
         setPlayers(p)
+        setPropsGraceUntil(grace)
         if (r.length && !r.some((x) => x.key === activeRound)) setActiveRound(r[0]!.key)
       })
       .catch((e) => setErr(String(e)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const propsGraceActive = useMemo(
+    () => (propsGraceUntil ? new Date(propsGraceUntil) > new Date() : false),
+    [propsGraceUntil],
+  )
 
   useEffect(() => {
     let alive = true
@@ -150,6 +158,8 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
             players={players}
             myProps={props}
             onSubmit={onProp}
+            graceActive={propsGraceActive}
+            graceUntil={propsGraceUntil}
           />
           {matches.length === 0 ? (
             <p className="mt-8 text-center font-body text-muted-foreground">{COPY.emptyMatches}</p>
