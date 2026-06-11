@@ -14,6 +14,8 @@
     "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.2.2",
+    "@dicebear/core": "^9.2.2",
     "@supabase/supabase-js": "2.45.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -30,7 +32,10 @@
     "tsx": "4.16.2",
     "typescript": "5.5.3",
     "vite": "5.4.8",
-    "vitest": "2.0.5"
+    "vite-plugin-pwa": "^0.20.5",
+    "vitest": "2.0.5",
+    "workbox-build": "^7.1.0",
+    "workbox-window": "^7.1.0"
   },
   "engines": {
     "node": ">=18.18"

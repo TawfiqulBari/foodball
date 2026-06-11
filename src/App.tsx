@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useAuth } from './auth/AuthProvider'
 import { BottomNav, type Tab } from './components/BottomNav'
 import { Login } from './screens/Login'
+import { Onboarding } from './screens/Onboarding'
 import { Matches } from './screens/Matches'
 import { Leaderboard } from './screens/Leaderboard'
 import { MyPicks } from './screens/MyPicks'
 import { More } from './screens/More'
 import { Admin } from './screens/Admin'
+import { isOnboarded } from './lib/avatar'
 import { COPY } from './lib/copy'
 
 export default function App() {
@@ -21,6 +23,8 @@ export default function App() {
     )
   }
   if (!session) return <Login />
+  // First login: force display-name + avatar setup before the app proper.
+  if (profile && !isOnboarded(profile.avatar_config)) return <Onboarding />
 
   return (
     <div className="min-h-screen bg-navy text-bunlight">

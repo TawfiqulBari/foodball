@@ -5,6 +5,14 @@
 export type Outcome = 'home' | 'draw' | 'away'
 export type MatchStatus = 'scheduled' | 'live' | 'finished'
 export type Market = 'outcome' | 'exact_score' | 'btts' | 'over_under'
+export type Prop = 'top_chef' | 'clean_plate' | 'spice'
+export type TourneyPickType =
+  | 'champion'
+  | 'finalist'
+  | 'golden_boot'
+  | 'golden_glove'
+  | 'young_player'
+  | 'total_goals'
 
 export interface Team {
   id: number
@@ -51,6 +59,41 @@ export interface MatchPick {
   points_awarded: number | null
 }
 
+export interface PlayerCatalog {
+  id: number
+  api_player_id: string | null
+  name: string
+  team: number | null
+  position: string | null
+}
+
+export interface RoundProp {
+  id: number
+  user_id: string
+  round_key: string
+  prop: Prop
+  selection: string
+  created_at: string
+  points_awarded: number | null
+}
+
+export interface TourneyPick {
+  id: number
+  user_id: string
+  pick_type: TourneyPickType
+  selection: string
+  set_after_round: string | null
+  superseded_by: number | null
+  created_at: string
+  points_awarded: number | null
+}
+
+export interface DecayRow {
+  pick_type: string
+  set_after_round: string | null
+  points: number
+}
+
 export interface Profile {
   id: string
   display_name: string
@@ -83,6 +126,28 @@ export interface Database {
         Insert: { user_id: string; match_id: number; market: Market; selection: string }
         Update: Partial<Pick<MatchPick, 'selection'>>
       }
+      round_props: {
+        Row: RoundProp
+        Insert: { user_id: string; round_key: string; prop: Prop; selection: string }
+        Update: Partial<Pick<RoundProp, 'selection'>>
+      }
+      tourney_picks: {
+        Row: TourneyPick
+        Insert: { user_id: string; pick_type: TourneyPickType; selection: string }
+        Update: Partial<Pick<TourneyPick, 'superseded_by'>>
+      }
+      players_catalog: { Row: PlayerCatalog; Insert: Partial<PlayerCatalog>; Update: Partial<PlayerCatalog> }
+      decay_schedule: { Row: DecayRow; Insert: Partial<DecayRow>; Update: Partial<DecayRow> }
+      round_top_scorers: {
+        Row: { round_key: string; player_id: number }
+        Insert: { round_key: string; player_id: number }
+        Update: Partial<{ round_key: string; player_id: number }>
+      }
+      tournament_results: {
+        Row: { pick_type: string; selection: string }
+        Insert: { pick_type: string; selection: string }
+        Update: Partial<{ pick_type: string; selection: string }>
+      }
     }
     Views: {
       leaderboard: { Row: LeaderboardRow }
@@ -100,6 +165,13 @@ export interface Database {
         Returns: void
       }
       fb_admin_set_underdog: { Args: { p_match_id: number; p_team_id: number }; Returns: void }
+      fb_set_tourney_pick: { Args: { p_pick_type: TourneyPickType; p_selection: string }; Returns: number }
+      fb_admin_settle_round: {
+        Args: { p_round_key: string; p_top_scorer_ids?: number[]; p_mark_complete?: boolean }
+        Returns: void
+      }
+      fb_admin_set_tournament_result: { Args: { p_pick_type: string; p_selection: string }; Returns: void }
+      fb_tourney_revision_open: { Args: Record<string, never>; Returns: boolean }
     }
   }
 }

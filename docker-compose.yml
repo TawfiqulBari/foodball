@@ -78,9 +78,10 @@ services:
       - db_password
     volumes:
       - foodball_pgdata:/var/lib/postgresql/data
-      # Init order: auth shim → migration → grants → seed (run once, on empty volume).
+      # Init order: auth shim → migrations (0001, 0002) → grants → seed (run once, on empty volume).
       - ./docker/db-init/00_auth_shim.sql:/docker-entrypoint-initdb.d/00_auth_shim.sql:ro
       - ./supabase/migrations/0001_init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ./supabase/migrations/0002_m2_markets_props_decay.sql:/docker-entrypoint-initdb.d/01b_m2.sql:ro
       - ./docker/db-init/02_grants.sql:/docker-entrypoint-initdb.d/02_grants.sql:ro
       - ./supabase/seed.sql:/docker-entrypoint-initdb.d/03_seed.sql:ro
       - ./docker/db-init/03_demo.sql:/docker-entrypoint-initdb.d/04_demo.sql:ro

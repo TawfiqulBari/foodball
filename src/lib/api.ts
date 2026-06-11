@@ -1,5 +1,20 @@
 import { supabase } from './supabase'
-import type { LeaderboardRow, MatchPick, MatchRow, Outcome, RoundRow, Team } from './database.types'
+import type {
+  DecayRow,
+  LeaderboardRow,
+  Market,
+  MatchPick,
+  MatchRow,
+  Outcome,
+  PlayerCatalog,
+  Profile,
+  Prop,
+  RoundProp,
+  RoundRow,
+  Team,
+  TourneyPick,
+  TourneyPickType,
+} from './database.types'
 
 export async function fetchRounds(): Promise<RoundRow[]> {
   const { data, error } = await supabase.from('rounds').select('*').order('sort_order')
@@ -32,18 +47,28 @@ export async function fetchMyPicks(): Promise<Map<string, MatchPick>> {
 
 /** Submit/replace an outcome pick. The DB lock trigger is the real guard; the
  *  client-side lock check is only to avoid a guaranteed-to-fail round trip. */
+export async function submitMatchPick(
+  userId: string,
+  matchId: number,
+  market: Market,
+  selection: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('match_picks')
+    .upsert(
+      { user_id: userId, match_id: matchId, market, selection },
+      { onConflict: 'user_id,match_id,market' },
+    )
+  if (error) throw error
+}
+
+/** Convenience wrapper for the outcome market (the common case). */
 export async function submitOutcomePick(
   userId: string,
   matchId: number,
   selection: Outcome,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('match_picks')
-    .upsert(
-      { user_id: userId, match_id: matchId, market: 'outcome', selection },
-      { onConflict: 'user_id,match_id,market' },
-    )
-  if (error) throw error
+  return submitMatchPick(userId, matchId, 'outcome', selection)
 }
 
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
@@ -52,17 +77,147 @@ export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
   return data ?? []
 }
 
+// ─── Reference data ──────────────────────────────────────────────────────────
+
+export async function fetchPlayers(): Promise<PlayerCatalog[]> {
+  const { data, error } = await supabase.from('players_catalog').select('*').order('name')
+  if (error) throw error
+  return data ?? []
+}
+
+/** Decay schedule rows (spec §4.3) — the single source The Menu + the decayed
+ *  value display read from, so they never drift from the authoritative scorer. */
+export async function fetchDecaySchedule(): Promise<DecayRow[]> {
+  const { data, error } = await supabase.from('decay_schedule').select('*')
+  if (error) throw error
+  return data ?? []
+}
+
+// ─── Round props (Top Chef / Clean Plate / Spice) ────────────────────────────
+
+/** The current user's round-prop picks for a round, keyed by prop. */
+export async function fetchMyRoundProps(roundKey: string): Promise<Map<Prop, RoundProp>> {
+  const { data, error } = await supabase.from('round_props').select('*').eq('round_key', roundKey)
+  if (error) throw error
+  return new Map((data ?? []).map((p) => [p.prop, p]))
+}
+
+export async function submitRoundProp(
+  userId: string,
+  roundKey: string,
+  prop: Prop,
+  selection: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('round_props')
+    .upsert(
+      { user_id: userId, round_key: roundKey, prop, selection },
+      { onConflict: 'user_id,round_key,prop' },
+    )
+  if (error) throw error
+}
+
+// ─── Tournament-long picks (with decay + revision history) ───────────────────
+
+/** All of the current user's tournament picks (full revision history), newest
+ *  first. The active pick per type is the first one of that type. */
+export async function fetchMyTourneyPicks(): Promise<TourneyPick[]> {
+  const { data, error } = await supabase
+    .from('tourney_picks')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+/** Set/revise a tournament pick. Server stamps the decay bucket + enforces the
+ *  revision window; a closed window throws. Returns the new pick id. */
+export async function setTourneyPick(pickType: TourneyPickType, selection: string): Promise<number> {
+  const { data, error } = await supabase.rpc('fb_set_tourney_pick', {
+    p_pick_type: pickType,
+    p_selection: selection,
+  })
+  if (error) throw error
+  return data as number
+}
+
+export async function isRevisionWindowOpen(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('fb_tourney_revision_open', {})
+  if (error) throw error
+  return Boolean(data)
+}
+
+// ─── Profile (onboarding + avatar) ───────────────────────────────────────────
+
+export async function updateProfile(
+  userId: string,
+  patch: Partial<Pick<Profile, 'display_name' | 'avatar_config'>>,
+): Promise<void> {
+  const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
+  if (error) throw error
+}
+
+// ─── Admin ───────────────────────────────────────────────────────────────────
+
 export async function adminSetResult(args: {
   matchId: number
   home: number
   away: number
+  homeEt?: number | null
+  awayEt?: number | null
   winner?: number | null
 }): Promise<void> {
   const { error } = await supabase.rpc('fb_admin_set_result', {
     p_match_id: args.matchId,
     p_home: args.home,
     p_away: args.away,
+    p_home_et: args.homeEt ?? null,
+    p_away_et: args.awayEt ?? null,
     p_winner: args.winner ?? null,
   })
+  if (error) throw error
+}
+
+export async function adminSetUnderdog(matchId: number, teamId: number | null): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_set_underdog', {
+    p_match_id: matchId,
+    p_team_id: teamId as number,
+  })
+  if (error) throw error
+}
+
+export async function adminSettleRound(
+  roundKey: string,
+  topScorerIds: number[],
+  markComplete: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_settle_round', {
+    p_round_key: roundKey,
+    p_top_scorer_ids: topScorerIds,
+    p_mark_complete: markComplete,
+  })
+  if (error) throw error
+}
+
+export async function adminSetTournamentResult(pickType: string, selection: string): Promise<void> {
+  const { error } = await supabase.rpc('fb_admin_set_tournament_result', {
+    p_pick_type: pickType,
+    p_selection: selection,
+  })
+  if (error) throw error
+}
+
+/** Tune a decay value (spec §4.3 is admin-editable). RLS allows admins only. */
+export async function adminUpdateDecay(
+  pickType: string,
+  setAfterRound: string | null,
+  points: number,
+): Promise<void> {
+  const base = supabase.from('decay_schedule').update({ points }).eq('pick_type', pickType)
+  const { error } =
+    setAfterRound === null
+      ? await base.is('set_after_round', null)
+      : await base.eq('set_after_round', setAfterRound)
   if (error) throw error
 }

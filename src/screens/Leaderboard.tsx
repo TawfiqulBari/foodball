@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchLeaderboard } from '../lib/api'
 import type { LeaderboardRow } from '../lib/database.types'
 import { useAuth } from '../auth/AuthProvider'
+import { Avatar } from '../components/Avatar'
 import { COPY } from '../lib/copy'
 
 const PLATE = ['🥇', '🥈', '🥉']
@@ -41,6 +42,7 @@ export function Leaderboard() {
                 <span className="w-7 text-center font-display text-lg">
                   {r.rank <= 3 ? PLATE[r.rank - 1] : r.rank}
                 </span>
+                <Avatar name={r.display_name} config={r.avatar_config} size={r.rank <= 3 ? 48 : 36} />
                 <span className="flex-1 font-bold">
                   {r.display_name}
                   {me && <span className="ml-2 text-xs font-normal">(you)</span>}
