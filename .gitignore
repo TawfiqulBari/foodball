@@ -45,3 +45,6 @@ Thumbs.db
 # Supabase CLI local state
 supabase/.branches/
 supabase/.temp/
+
+# Local screenshots / scratch captures (not part of the repo)
+screenshots/
