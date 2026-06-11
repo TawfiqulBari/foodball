@@ -9,14 +9,35 @@ import { Leaderboard } from './screens/Leaderboard'
 import { MyPicks } from './screens/MyPicks'
 import { More } from './screens/More'
 import { Admin } from './screens/Admin'
+import { Guide } from './screens/Guide'
 import { ResultMoments } from './components/ResultMoments'
 import { ThemeToggle } from './components/ThemeToggle'
 import { isOnboarded } from './lib/avatar'
 import { COPY } from './lib/copy'
 
+const GUIDE_SEEN_KEY = 'fb.seenGuide'
+function guideSeen(): boolean {
+  try {
+    return localStorage.getItem(GUIDE_SEEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 export default function App() {
   const { session, profile, loading } = useAuth()
-  const [tab, setTab] = useState<Tab>('matches')
+  const [seenGuide, setSeenGuide] = useState(guideSeen)
+  // New players land on the guide first; returning players on Matches.
+  const [tab, setTab] = useState<Tab>(seenGuide ? 'matches' : 'guide')
+
+  const markGuideSeen = () => {
+    try {
+      localStorage.setItem(GUIDE_SEEN_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+    setSeenGuide(true)
+  }
 
   if (loading) {
     return (
@@ -45,6 +66,15 @@ export default function App() {
         {tab === 'matchday' && <MatchDay />}
         {tab === 'leaderboard' && <Leaderboard />}
         {tab === 'mypicks' && <MyPicks />}
+        {tab === 'guide' && (
+          <Guide
+            firstRun={!seenGuide}
+            onStart={() => {
+              markGuideSeen()
+              setTab('matches')
+            }}
+          />
+        )}
         {tab === 'more' && <More />}
         {tab === 'admin' && <Admin />}
       </main>

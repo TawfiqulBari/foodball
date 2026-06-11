@@ -6,6 +6,7 @@
   "description": "FoodBall weekly round recap — renders a vertical MP4 from the leaderboard (spec §9 M5). Separate from the web app runtime.",
   "scripts": {
     "render": "node render.mjs",
+    "render:guide": "node render-guide.mjs",
     "studio": "remotion studio src/index.ts",
     "lint": "tsc --noEmit"
   },

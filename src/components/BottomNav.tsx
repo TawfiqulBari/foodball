@@ -1,10 +1,11 @@
-export type Tab = 'matches' | 'matchday' | 'leaderboard' | 'mypicks' | 'more' | 'admin'
+export type Tab = 'matches' | 'matchday' | 'leaderboard' | 'mypicks' | 'guide' | 'more' | 'admin'
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'matches', label: 'Matches', icon: '⚽' },
   { key: 'matchday', label: 'Stadium', icon: '🏟️' },
   { key: 'leaderboard', label: 'Food Chain', icon: '🍽️' },
   { key: 'mypicks', label: 'Picks', icon: '📋' },
+  { key: 'guide', label: 'Guide', icon: '📖' },
   { key: 'more', label: 'More', icon: '🍔' },
 ]
 
