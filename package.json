@@ -2,6 +2,7 @@
   "name": "foodball",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "FoodBall — FIFA World Cup 2026 office prediction league. Predict. Feast. Repeat.",
   "scripts": {
