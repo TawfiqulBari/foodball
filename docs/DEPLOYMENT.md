@@ -55,6 +55,39 @@ npx supabase db reset >/dev/null 2>&1 || true   # (only if you want a clean DB)
 #     -c "update public.profiles set is_admin=true where id=(select id from auth.users where email='you@infosonik.com');"
 ```
 
+## 5) Scheduled results sync (`pg_cron` → `sync-results`)
+
+The `sync-results` Edge Function + its `fb_ingest_result` RPC are built and tested;
+this step just schedules the function to run every 5 min. Migration
+`supabase/migrations/0004_sync_results_cron.sql` does the scheduling (pg_cron +
+pg_net + Vault — present on the Supabase CLI stack, absent on the stock-postgres
+test harness, so it is NOT auto-applied locally).
+
+```bash
+# a) Deploy the Edge Function + set its server-side secrets (never in the SPA)
+npx supabase functions deploy sync-results
+SYNC_SECRET="$(openssl rand -base64 32 | tr -d '\n')"
+npx supabase secrets set FOOTBALL_DATA_TOKEN="<your token>" SYNC_SECRET="$SYNC_SECRET"
+
+# b) Store the URL + the SAME secret in Vault, then apply the cron migration
+DBURL="$(npx supabase status -o env | grep DB_URL | cut -d= -f2-)"
+psql "$DBURL" -c "select vault.create_secret('https://<project-ref>.supabase.co', 'project_url');"
+psql "$DBURL" -c "select vault.create_secret('$SYNC_SECRET', 'sync_secret');"
+npx supabase migration up          # applies 0004 (and any pending) → schedules the job
+
+# c) Verify
+psql "$DBURL" -c "select jobname, schedule, active from cron.job where jobname='foodball-sync-results';"
+psql "$DBURL" -c "select status, return_message, start_time from cron.job_run_details
+                   where command like '%sync-results%' order by start_time desc limit 5;"
+# Manual one-off poll (same as a cron tick):
+curl -s -X POST "https://<project-ref>.supabase.co/functions/v1/sync-results" \
+  -H "x-sync-secret: $SYNC_SECRET" -H "Content-Type: application/json" -d '{}'
+```
+
+The job calls the function only inside a match window (a live match, or kickoff in
+the last 3.5h), so off-window ticks make no API call. Manual admin results always
+win — a poll never overwrites a `result_source='manual'` match.
+
 ## Firewall / Cloudflare
 
 - Inbound **80 + 443** must reach the box (they already listen publicly here).

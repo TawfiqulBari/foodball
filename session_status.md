@@ -54,9 +54,11 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
 
 ## Remaining (deploy wiring, not features)
 
-- **`pg_cron` schedule** that calls the `sync-results` Edge Function every 5 min —
-  the function + `fb_ingest_result` RPC exist and are tested; the cron entry is a
-  deploy step (snippet in the header of `supabase/functions/sync-results/index.ts`).
+- **`pg_cron` schedule** for `sync-results` — now wired as migration
+  `0004_sync_results_cron.sql` (window-aware, secrets from Supabase Vault). It runs
+  only on a Supabase DB (pg_cron/pg_net/Vault), not the local stock-postgres harness.
+  To activate: deploy the function, set the `project_url` + `sync_secret` Vault
+  secrets, and `supabase migration up` — full runbook in `docs/DEPLOYMENT.md §5`.
 - **Squads sync** to populate `players_catalog` — until then the Clean Plate / Top
   Chef / Golden Boot pickers are empty, and Top Chef + tournament awards settle from
   **admin-entered** data. Tournament settlement (champion/finalists/awards) and
