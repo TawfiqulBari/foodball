@@ -1,0 +1,27 @@
+{
+  "name": "foodball-recap",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "FoodBall weekly round recap — renders a vertical MP4 from the leaderboard (spec §9 M5). Separate from the web app runtime.",
+  "scripts": {
+    "render": "node render.mjs",
+    "studio": "remotion studio src/index.ts",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dicebear/collection": "9.2.2",
+    "@dicebear/core": "9.2.2",
+    "@remotion/bundler": "4.0.290",
+    "@remotion/renderer": "4.0.290",
+    "@supabase/supabase-js": "2.45.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.290",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.3",
+    "typescript": "5.5.3"
+  }
+}

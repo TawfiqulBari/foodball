@@ -2,12 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current state: Milestones 1–4 built & verified
+## Current state: all milestones (M1–M5) built & verified
 
-**M1 (core loop), M2 (full markets + avatars), M3 (auto-sync + realtime), and M4
-(the fun layer) are built and their acceptance checklists pass.** Work **milestone
-by milestone (M1→M5)**, verifying each milestone's acceptance checklist (spec §9)
-before the next. The canonical source of truth remains
+**M1 (core loop), M2 (full markets + avatars), M3 (auto-sync + realtime), M4 (the
+fun layer), and M5 (the optional Remotion recap) are all built and their acceptance
+checklists pass.** The product is feature-complete against the spec; remaining work
+is deploy wiring (see below), not features. When extending, keep verifying each
+milestone's acceptance checklist (spec §9) and re-running the test suites. The canonical source of truth remains
 `plans/worldcup-league-claude-code-prompt.md` — read it before extending. Brand
 assets live in `plans/` and `public/branding/` (+ a `/branding/` copy the spec expects).
 
@@ -47,17 +48,22 @@ What exists now:
 - **Edge functions** — `supabase/functions/sync-fixtures/` (daily fixture upsert)
   and `sync-results/` (M3: polls live scores/results → `fb_ingest_result`; admin-JWT
   or `SYNC_SECRET`-gated; football-data.org→openfootball fallback, Zod-validated).
+- **Recap (M5)** — `recap/` is a **separate** Remotion package (own `package.json`,
+  not part of the web-app runtime). `npm run render -- --round=MD2` pulls the
+  leaderboard via the service key (demo-data fallback offline) → `recap/out/recap-<round>.mp4`
+  (9:16, ~35s: headline → top-3 podium w/ avatars → climber/faller → outro).
 - Security control mapping in `docs/SECURITY.md`; how-to-run in `docs/RUNNING.md`.
 
-Not yet built: **M5** the optional Remotion `/recap` package (`npm run render`).
-`lottie-react` is still uninstalled — M4's celebrations use framer-motion + the
-mascot + emoji/SVG confetti (spec §7.5's "flying-food confetti" reading); drop in
-LottieFiles JSON later if desired. Also not yet wired: the `pg_cron` schedule that
-calls `sync-results` (the function + RPC exist and are tested; the cron entry is a
-deploy step — see the header of `sync-results/index.ts`). Tournament settlement
-(champion/finalists/awards) and knockout ET/penalty winners are **admin-entered**
-(the API poll never overwrites them). Squad data (`players_catalog`) is empty until
-a squads sync exists, so Clean Plate / Top Chef / Golden Boot pickers stay empty until then.
+Remaining work is **deploy wiring, not features**: (1) the `pg_cron` schedule that
+calls `sync-results` every 5 min (the function + RPC exist and are tested; the cron
+entry is a deploy step — see the header of `sync-results/index.ts`); (2) a squads
+sync to populate `players_catalog` (until then Clean Plate / Top Chef / Golden Boot
+pickers stay empty, and Top Chef / awards are settled from admin-entered data).
+Tournament settlement (champion/finalists/awards) and knockout ET/penalty winners
+are **admin-entered** (the API poll never overwrites them — manual always wins).
+Optional polish: `lottie-react` is uninstalled — M4's celebrations use framer-motion
++ the mascot + emoji/SVG confetti (spec §7.5's "flying-food confetti" reading); drop
+in LottieFiles JSON later if desired.
 
 ## What FoodBall is
 
@@ -111,7 +117,11 @@ The big picture that spans many files:
   box, single-origin behind the host nginx + Let's Encrypt, email+password. Needs a
   hostname + Gmail SMTP app password (kept in `secrets/`, never committed).
 
-(The M5 recap command `npm run render` and its `/recap` Remotion package don't exist yet — see "Not yet built".)
+- **Recap MP4 (M5):** `cd recap && npm install && npm run render -- --round=MD2` →
+  `recap/out/recap-MD2.mp4`. Set `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` for live
+  data (else it renders demo data). Needs Remotion's headless Chromium + its system
+  libs (on a fresh Linux box: `libatk1.0-0t64 libatk-bridge2.0-0t64 libatspi2.0-0t64
+  libasound2t64 libxdamage1 …`); renders fine on a normal laptop.
 
 **Extending the schema/functions** (M2→M5): add a **new** numbered migration under
 `supabase/migrations/` — never edit `0001_init.sql` in place (`supabase migration new <name>`).
