@@ -63,27 +63,27 @@ export function Login() {
   }
 
   return (
-    <main className="min-h-screen bg-cream text-ink flex flex-col items-center justify-center p-6">
+    <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
       <img src="/branding/foodball-wordmark.svg" alt="FoodBall" className="w-64 max-w-full" />
-      <p className="mt-2 font-display text-orange text-lg">{COPY.tagline}</p>
-      <p className="mt-1 font-body text-ink/70 text-sm">{COPY.motto} 🍔</p>
+      <p className="mt-2 font-display text-primary text-lg">{COPY.tagline}</p>
+      <p className="mt-1 font-body text-muted-foreground text-sm">{COPY.motto} 🍔</p>
 
       <form onSubmit={submit} className="mt-8 w-full max-w-sm font-body space-y-3">
         {mode === 'signup' && (
           <div>
-            <label htmlFor="name" className="block text-sm text-ink/80 mb-1">Display name</label>
+            <label htmlFor="name" className="block text-sm text-muted-foreground mb-1">Display name</label>
             <input
               id="name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Chef Tawfiq"
-              className="w-full min-h-tap rounded-lg px-4 bg-white text-ink ring-1 ring-ink/10 outline-none focus:ring-2 focus:ring-orange"
+              className="w-full min-h-tap rounded-lg px-4 bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               autoComplete="nickname"
             />
           </div>
         )}
         <div>
-          <label htmlFor="email" className="block text-sm text-ink/80 mb-1">Work email</label>
+          <label htmlFor="email" className="block text-sm text-muted-foreground mb-1">Work email</label>
           <input
             id="email"
             type="email"
@@ -92,12 +92,12 @@ export function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
-            className="w-full min-h-tap rounded-lg px-4 bg-white text-ink ring-1 ring-ink/10 outline-none focus:ring-2 focus:ring-orange"
+            className="w-full min-h-tap rounded-lg px-4 bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />
         </div>
         <div>
-          <label htmlFor="password" className="block text-sm text-ink/80 mb-1">Password</label>
+          <label htmlFor="password" className="block text-sm text-muted-foreground mb-1">Password</label>
           <input
             id="password"
             type="password"
@@ -105,7 +105,7 @@ export function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="at least 8 characters"
-            className="w-full min-h-tap rounded-lg px-4 bg-white text-ink ring-1 ring-ink/10 outline-none focus:ring-2 focus:ring-orange"
+            className="w-full min-h-tap rounded-lg px-4 bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />
         </div>
@@ -113,11 +113,11 @@ export function Login() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full min-h-tap rounded-lg bg-orange font-display text-white text-lg active:scale-95 disabled:opacity-60"
+          className="w-full min-h-tap rounded-lg bg-primary font-display text-primary-foreground text-lg active:scale-95 disabled:opacity-60"
         >
           {busy ? 'Cooking…' : mode === 'signup' ? "Create account — let's eat" : 'Sign in'}
         </button>
-        {error && <p className="text-tomato text-sm">{error}</p>}
+        {error && <p className="text-destructive text-sm">{error}</p>}
       </form>
 
       <button
@@ -126,7 +126,7 @@ export function Login() {
           setMode((m) => (m === 'signin' ? 'signup' : 'signin'))
           setError(null)
         }}
-        className="mt-4 font-body text-sm text-orange underline underline-offset-2"
+        className="mt-4 font-body text-sm text-primary underline underline-offset-2"
       >
         {mode === 'signin' ? 'New here? Create an account' : 'Already have an account? Sign in'}
       </button>

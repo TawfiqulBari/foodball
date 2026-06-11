@@ -74,19 +74,19 @@ export function Leaderboard() {
 
   return (
     <div className="px-4 pt-3 pb-24">
-      <h1 className="font-display text-2xl text-orange flex items-center gap-2">
+      <h1 className="font-display text-2xl text-primary flex items-center gap-2">
         {COPY.leaderboard}
         {live && (
-          <span className="rounded-full bg-tomato/20 px-2 py-0.5 text-[11px] font-body font-bold text-tomato animate-pulse">
+          <span className="rounded-full bg-tomato/20 px-2 py-0.5 text-[11px] font-body font-bold text-destructive animate-pulse">
             ● LIVE
           </span>
         )}
       </h1>
-      {err && <p className="text-tomato text-sm font-body">{err}</p>}
+      {err && <p className="text-destructive text-sm font-body">{err}</p>}
       {loading ? (
-        <p className="mt-8 text-center font-body text-ink/60">Counting the courses…</p>
+        <p className="mt-8 text-center font-body text-muted-foreground">Counting the courses…</p>
       ) : rows.length === 0 ? (
-        <p className="mt-8 text-center font-body text-ink/60">{COPY.emptyLeaderboard}</p>
+        <p className="mt-8 text-center font-body text-muted-foreground">{COPY.emptyLeaderboard}</p>
       ) : (
         <LayoutGroup>
           <ul className="mt-3 space-y-2">
@@ -150,7 +150,7 @@ function Row({
       className={`flex items-center gap-3 rounded-card px-4 py-3 font-body ${
         rival ? 'ml-4' : ''
       } ${
-        me ? 'bg-yellow text-ink ring-2 ring-orange' : rival ? 'bg-white text-ink shadow-sm ring-1 ring-bun' : 'bg-white text-ink shadow-sm'
+        me ? 'bg-primary/10 text-foreground ring-2 ring-primary' : rival ? 'bg-card text-card-foreground shadow-sm ring-1 ring-bun' : 'bg-card text-card-foreground shadow-sm'
       }`}
     >
       <span className="w-7 text-center font-display text-lg">
@@ -163,7 +163,7 @@ function Row({
         {rival && <span className="ml-1 text-xs">📌</span>}
       </span>
       <RankDelta delta={row.rank_delta} />
-      <span className="text-xs text-navy/60">{row.outcome_hits} ✓</span>
+      <span className="text-xs text-muted-foreground">{row.outcome_hits} ✓</span>
       <span className="w-8 text-right font-display text-lg">{row.total}</span>
       {canPin && (
         <button
@@ -171,7 +171,7 @@ function Row({
           onClick={onTogglePin}
           aria-label={pinned ? 'Unpin rival' : 'Pin rival'}
           aria-pressed={pinned}
-          className={`text-lg leading-none ${pinned ? 'text-bun' : 'text-navy/25 hover:text-navy/50'}`}
+          className={`text-lg leading-none ${pinned ? 'text-bun' : 'text-muted-foreground hover:text-foreground'}`}
         >
           {pinned ? '★' : '☆'}
         </button>
@@ -182,11 +182,11 @@ function Row({
 
 /** ▲/▼ movement since the last completed round (spec §7.3). */
 function RankDelta({ delta }: { delta: number }) {
-  if (!delta) return <span className="w-8 text-center text-xs text-navy/30" aria-hidden>–</span>
+  if (!delta) return <span className="w-8 text-center text-xs text-muted-foreground" aria-hidden>–</span>
   const up = delta > 0
   return (
     <span
-      className={`w-8 text-center text-xs font-bold ${up ? 'text-lettuce' : 'text-tomato'}`}
+      className={`w-8 text-center text-xs font-bold ${up ? 'text-lettuce' : 'text-destructive'}`}
       title={`${up ? 'Up' : 'Down'} ${Math.abs(delta)} since last round`}
     >
       {up ? '▲' : '▼'}

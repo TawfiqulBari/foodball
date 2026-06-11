@@ -138,9 +138,9 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
   return (
     <div className="px-4 pt-3">
       <RoundChips rounds={rounds} active={activeRound} onChange={setActiveRound} />
-      {err && <p className="text-tomato text-sm font-body">{err}</p>}
+      {err && <p className="text-destructive text-sm font-body">{err}</p>}
       {loading ? (
-        <p className="mt-8 text-center font-body text-ink/60">Plating up the fixtures…</p>
+        <p className="mt-8 text-center font-body text-muted-foreground">Plating up the fixtures…</p>
       ) : (
         <div className="mt-3 pb-24">
           <RoundPropsCard
@@ -152,7 +152,7 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
             onSubmit={onProp}
           />
           {matches.length === 0 ? (
-            <p className="mt-8 text-center font-body text-ink/60">{COPY.emptyMatches}</p>
+            <p className="mt-8 text-center font-body text-muted-foreground">{COPY.emptyMatches}</p>
           ) : (
             <div className="space-y-3">
               {matches.map((m) => (
@@ -183,7 +183,7 @@ function RoundChips({
           type="button"
           onClick={() => onChange(r.key)}
           className={`shrink-0 min-h-tap rounded-full px-4 text-sm font-display transition ${
-            active === r.key ? 'bg-orange text-white' : 'bg-white text-ink ring-1 ring-ink/10 hover:bg-ink/5'
+            active === r.key ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground border border-border hover:bg-accent'
           }`}
         >
           {r.key}

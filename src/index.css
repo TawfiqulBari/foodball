@@ -2,13 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── shadcn-style design tokens (HSL). Warm-neutral surfaces, orange primary.
+   Light = :root, dark = .dark on <html>. Components use semantic tokens
+   (bg-background, bg-card, text-foreground, text-muted-foreground, border-border,
+   bg-primary…) so both themes stay sharp and consistent. ── */
 @layer base {
+  :root {
+    --background: 36 100% 99%;
+    --foreground: 24 14% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 14% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 14% 12%;
+    --primary: 24 95% 53%; /* orange #F97316 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 33 100% 96%;
+    --secondary-foreground: 24 30% 18%;
+    --muted: 30 16% 95%;
+    --muted-foreground: 24 8% 42%;
+    --accent: 33 100% 93%;
+    --accent-foreground: 24 30% 18%;
+    --destructive: 2 75% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 14% 89%;
+    --input: 30 14% 89%;
+    --ring: 24 95% 53%;
+    --radius: 0.85rem;
+  }
+  .dark {
+    --background: 24 14% 8%;
+    --foreground: 36 33% 96%;
+    --card: 24 13% 12%;
+    --card-foreground: 36 33% 96%;
+    --popover: 24 13% 12%;
+    --popover-foreground: 36 33% 96%;
+    --primary: 24 95% 56%;
+    --primary-foreground: 24 30% 8%;
+    --secondary: 24 10% 18%;
+    --secondary-foreground: 36 33% 96%;
+    --muted: 24 9% 17%;
+    --muted-foreground: 30 10% 65%;
+    --accent: 24 10% 22%;
+    --accent-foreground: 36 33% 96%;
+    --destructive: 2 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 24 9% 24%;
+    --input: 24 9% 24%;
+    --ring: 24 95% 56%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
   html {
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    /* Bright warm theme: cream page, dark-ink text. */
-    @apply bg-cream font-body text-ink antialiased;
+    @apply bg-background font-body text-foreground antialiased;
   }
   /* Respect reduced-motion globally (spec §7.5). */
   @media (prefers-reduced-motion: reduce) {
@@ -21,9 +71,8 @@
   }
 }
 
-/* Match Day pitch animations — CSS keyframes (compositor-cheap, so dozens of
-   supporters stay smooth on phones; the reduced-motion rule above disables them).
-   GPU-friendly: transform-only, will-change. */
+/* Match Day pitch animations — CSS keyframes (compositor-cheap; disabled by the
+   reduced-motion rule above). */
 @layer utilities {
   @keyframes fb-bob {
     0%, 100% { transform: translateY(0); }

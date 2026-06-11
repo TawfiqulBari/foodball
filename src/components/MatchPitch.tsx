@@ -60,26 +60,26 @@ export function MatchPitch({
   }
 
   return (
-    <div className="rounded-card overflow-hidden shadow-lg ring-1 ring-ink/10 bg-white">
-      {/* Scoreboard — bright bar */}
-      <div className="flex items-center justify-center gap-3 bg-white px-3 py-2 font-display text-ink">
+    <div className="rounded-card overflow-hidden shadow-lg border border-border bg-card">
+      {/* Scoreboard */}
+      <div className="flex items-center justify-center gap-3 bg-card px-3 py-2 font-display text-card-foreground">
         <span className="flex items-center gap-1 text-lg">
           {home?.flag_emoji} {homeCode}
         </span>
-        <span className="rounded-lg bg-ink px-3 py-0.5 text-2xl text-yellow tabular-nums">
-          {scoreHome}<span className="px-1 text-white/50">–</span>{scoreAway}
+        <span className="rounded-lg bg-primary px-3 py-0.5 text-2xl text-primary-foreground tabular-nums">
+          {scoreHome}<span className="px-1 opacity-60">–</span>{scoreAway}
         </span>
         <span className="flex items-center gap-1 text-lg">
           {awayCode} {away?.flag_emoji}
         </span>
         {live ? (
-          <span className="ml-1 rounded-full bg-tomato px-2 py-0.5 text-[10px] font-body font-bold text-white animate-pulse">
+          <span className="ml-1 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-body font-bold text-destructive-foreground animate-pulse">
             ● LIVE
           </span>
         ) : finished ? (
-          <span className="ml-1 text-[11px] font-body text-ink/60">FT</span>
+          <span className="ml-1 text-[11px] font-body text-muted-foreground">FT</span>
         ) : (
-          <span className="ml-1 text-[11px] font-body text-teal">warming up</span>
+          <span className="ml-1 text-[11px] font-body text-primary">warming up</span>
         )}
       </div>
 

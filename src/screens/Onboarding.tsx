@@ -41,14 +41,14 @@ export function Onboarding() {
   }
 
   return (
-    <main className="min-h-screen bg-cream text-ink p-6">
+    <main className="min-h-screen bg-background text-foreground p-6">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="font-display text-3xl text-orange text-center">Build your chef</h1>
-        <p className="mt-1 text-center font-body text-ink/70 text-sm">
+        <h1 className="font-display text-3xl text-primary text-center">Build your chef</h1>
+        <p className="mt-1 text-center font-body text-muted-foreground text-sm">
           Pick a name and a face. {COPY.motto} 🍔
         </p>
 
-        <label htmlFor="display" className="mt-6 block text-sm text-ink/80 mb-1 font-body">
+        <label htmlFor="display" className="mt-6 block text-sm text-muted-foreground mb-1 font-body">
           Display name
         </label>
         <input
@@ -57,7 +57,7 @@ export function Onboarding() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Chef Tawfiq"
           maxLength={40}
-          className="w-full min-h-tap rounded-lg px-4 text-ink font-body bg-white ring-1 ring-ink/10 outline-none focus:ring-2 focus:ring-orange"
+          className="w-full min-h-tap rounded-lg px-4 font-body bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           autoComplete="nickname"
         />
 
@@ -65,13 +65,13 @@ export function Onboarding() {
           <AvatarBuilder name={name} config={config} onChange={setConfig} />
         </div>
 
-        {err && <p className="mt-3 text-tomato text-sm font-body">{err}</p>}
+        {err && <p className="mt-3 text-destructive text-sm font-body">{err}</p>}
 
         <button
           type="button"
           disabled={busy}
           onClick={() => void confirm()}
-          className="mt-5 w-full min-h-tap rounded-lg bg-orange font-display text-white text-lg active:scale-95 disabled:opacity-60"
+          className="mt-5 w-full min-h-tap rounded-lg bg-primary font-display text-primary-foreground text-lg active:scale-95 disabled:opacity-60"
         >
           {busy ? 'Plating…' : "That's me! 🍔"}
         </button>

@@ -12,7 +12,7 @@ interface Variant {
 }
 
 const VARIANTS: Record<MomentKind, Variant> = {
-  full_course: { mood: 'happy', headline: 'FULL COURSE!', sub: 'Exact score — chef’s special!', accent: 'text-orange', particles: ['🍔', '🍟', '🥟', '🌭', '🎉'] },
+  full_course: { mood: 'happy', headline: 'FULL COURSE!', sub: 'Exact score — chef’s special!', accent: 'text-primary', particles: ['🍔', '🍟', '🥟', '🌭', '🎉'] },
   spicy: { mood: 'spicy', headline: 'SPICY PICK!', sub: 'Underdog came good — ×2!', accent: 'text-tomato', particles: ['🌶️', '🔥', '🍔', '🥟'] },
   chefs_kiss: { mood: 'happy', headline: 'CHEF’S KISS!', sub: 'Cooked to perfection.', accent: 'text-lettuce', particles: ['😘', '🍴', '🧀', '🎉'] },
   burnt_toast: { mood: 'sad', headline: 'Burnt toast.', sub: 'Next match, chef.', accent: 'text-tomato', particles: ['🍞', '🌧️'] },
@@ -51,7 +51,7 @@ export function ResultOverlay({
       type="button"
       onClick={onDone}
       aria-label="Dismiss result"
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-cream via-yellow/40 to-orange/25 px-6 text-center"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6 text-center"
       initial={reduce ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={reduce ? undefined : { opacity: 0 }}
@@ -82,13 +82,13 @@ export function ResultOverlay({
       </motion.div>
 
       <h2 className={`mt-4 font-display text-4xl drop-shadow-sm ${v.accent}`}>{v.headline}</h2>
-      <p className="mt-1 font-body text-ink/70">{v.sub}</p>
-      <p className="mt-1 font-body text-xs text-ink/50">
+      <p className="mt-1 font-body text-muted-foreground">{v.sub}</p>
+      <p className="mt-1 font-body text-xs text-muted-foreground">
         {homeCode} {moment.homeScore}–{moment.awayScore} {awayCode}
       </p>
 
       <motion.p
-        className={`mt-3 font-display text-5xl ${moment.points > 0 ? 'text-orange' : 'text-ink/40'}`}
+        className={`mt-3 font-display text-5xl ${moment.points > 0 ? 'text-primary' : 'text-muted-foreground'}`}
         initial={reduce ? false : { scale: 0.6 }}
         animate={{ scale: 1 }}
         transition={reduce ? undefined : { type: 'spring', stiffness: 260, damping: 14, delay: 0.15 }}
@@ -96,7 +96,7 @@ export function ResultOverlay({
         {moment.points > 0 ? `+${moment.points}` : '+0'}
       </motion.p>
 
-      <p className="mt-6 font-body text-xs text-ink/40">tap to continue</p>
+      <p className="mt-6 font-body text-xs text-muted-foreground">tap to continue</p>
     </motion.button>
   )
 }

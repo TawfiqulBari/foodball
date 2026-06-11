@@ -33,13 +33,13 @@ export function More() {
   )
 
   return (
-    <div className="px-4 pt-3 pb-24 font-body text-ink">
-      <h1 className="font-display text-2xl text-orange">More</h1>
+    <div className="px-4 pt-3 pb-24 font-body text-foreground">
+      <h1 className="font-display text-2xl text-primary">More</h1>
 
       {/* The Menu — auto-generated from the scoring tables (spec §7.7) */}
-      <section className="mt-4 rounded-card bg-white text-ink shadow-sm p-4">
+      <section className="mt-4 rounded-card bg-card text-card-foreground shadow-sm p-4">
         <h2 className="font-display text-xl">The Menu 🍽️</h2>
-        <p className="text-sm mt-1 text-ink/70">How points are cooked — straight from the scoring tables.</p>
+        <p className="text-sm mt-1 text-muted-foreground">How points are cooked — straight from the scoring tables.</p>
 
         <h3 className="mt-3 font-display text-lg">Per match</h3>
         <ul className="mt-1 text-sm list-disc list-inside space-y-1">
@@ -59,14 +59,14 @@ export function More() {
         </ul>
 
         <h3 className="mt-3 font-display text-lg">Tournament long shots (decay)</h3>
-        <p className="text-xs text-ink/60">The later you set a pick, the less it pays.</p>
+        <p className="text-xs text-muted-foreground">The later you set a pick, the less it pays.</p>
         {decay.length === 0 ? (
-          <p className="mt-1 text-sm text-ink/50 italic">Loading the decay table…</p>
+          <p className="mt-1 text-sm text-muted-foreground italic">Loading the decay table…</p>
         ) : (
           <div className="mt-1 overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="text-ink/60">
+                <tr className="text-muted-foreground">
                   <th className="text-left py-1 pr-2">Pick</th>
                   {DECAY_BUCKETS.map((b) => (
                     <th key={b.label} className="px-1 py-1 text-center">{b.label}</th>
@@ -75,13 +75,13 @@ export function More() {
               </thead>
               <tbody>
                 {pickTypes.map((pt) => (
-                  <tr key={pt} className="border-t border-ink/10">
+                  <tr key={pt} className="border-t border-border">
                     <td className="py-1 pr-2 font-bold">{TOURNEY_PICK_LABELS[pt] ?? pt}</td>
                     {DECAY_BUCKETS.map((b) => {
                       const v = decayByType.get(pt)?.get(b.key)
                       return (
                         <td key={b.label} className="px-1 py-1 text-center">
-                          {v ?? <span className="text-ink/30">—</span>}
+                          {v ?? <span className="text-muted-foreground">—</span>}
                         </td>
                       )
                     })}
@@ -100,9 +100,9 @@ export function More() {
       </section>
 
       {/* Install as app */}
-      <section className="mt-4 rounded-card bg-white text-ink shadow-sm p-4">
+      <section className="mt-4 rounded-card bg-card text-card-foreground shadow-sm p-4">
         <h2 className="font-display text-lg">Install FoodBall 📲</h2>
-        <p className="text-sm mt-1 text-ink/70">Add it to your home screen — it runs full-screen, like a real app.</p>
+        <p className="text-sm mt-1 text-muted-foreground">Add it to your home screen — it runs full-screen, like a real app.</p>
         <ul className="mt-2 text-sm list-disc list-inside space-y-1">
           <li><strong>iPhone (Safari):</strong> Share → “Add to Home Screen”.</li>
           <li><strong>Android (Chrome):</strong> ⋮ menu → “Install app” / “Add to Home screen”.</li>
@@ -110,12 +110,12 @@ export function More() {
       </section>
 
       {/* Account */}
-      <section className="mt-4 text-sm text-ink/70">
-        <p>Signed in as <strong className="text-ink">{profile?.display_name ?? '…'}</strong></p>
+      <section className="mt-4 text-sm text-muted-foreground">
+        <p>Signed in as <strong className="text-foreground">{profile?.display_name ?? '…'}</strong></p>
         <button
           type="button"
           onClick={() => void signOut()}
-          className="mt-2 min-h-tap rounded-lg bg-tomato px-4 font-display text-white active:scale-95"
+          className="mt-2 min-h-tap rounded-lg bg-destructive px-4 font-display text-destructive-foreground active:scale-95"
         >
           Sign out
         </button>

@@ -51,20 +51,20 @@ export function MatchCard({
   const disabled = locked || finished
 
   return (
-    <div className="rounded-card bg-white text-ink p-4 shadow-sm ring-1 ring-ink/10">
-      <div className="flex items-center justify-between text-xs font-body text-ink/60">
+    <div className="rounded-card bg-card text-card-foreground p-4 shadow-sm border border-border">
+      <div className="flex items-center justify-between text-xs font-body text-muted-foreground">
         <span>
           {match.group_letter ? `Group ${match.group_letter} · ` : ''}
           {kickoffLabel(match.kickoff)}
         </span>
         {finished ? (
-          <span className="font-semibold text-ink">FT</span>
+          <span className="font-semibold text-foreground">FT</span>
         ) : liveNow ? (
-          <span className="font-semibold text-tomato animate-pulse">● LIVE</span>
+          <span className="font-semibold text-destructive animate-pulse">● LIVE</span>
         ) : locked ? (
-          <span className="font-semibold text-tomato">Locked</span>
+          <span className="font-semibold text-destructive">Locked</span>
         ) : (
-          <span className="font-semibold text-orange">⏱ {countdownToLock(match.kickoff)}</span>
+          <span className="font-semibold text-primary">⏱ {countdownToLock(match.kickoff)}</span>
         )}
       </div>
 
@@ -74,11 +74,11 @@ export function MatchCard({
           {underdogIsHome && <Tag />}
         </span>
         {finished || liveNow ? (
-          <span className={`px-2 text-2xl ${liveNow ? 'text-tomato' : ''}`}>
+          <span className={`px-2 text-2xl ${liveNow ? 'text-destructive' : ''}`}>
             {match.home_score ?? 0}–{match.away_score ?? 0}
           </span>
         ) : (
-          <span className="px-2 text-ink/40">vs</span>
+          <span className="px-2 text-muted-foreground">vs</span>
         )}
         <span className="flex items-center gap-1">
           {away?.fifa_code} {away?.flag_emoji}
@@ -97,7 +97,7 @@ export function MatchCard({
               disabled={disabled || busyMarket !== null}
               onClick={() => void choose('outcome', o)}
               className={`min-h-tap rounded-lg px-2 py-2 text-sm font-body font-bold transition active:scale-95 disabled:opacity-50 ${
-                selected ? 'bg-orange text-white' : 'bg-ink/5 text-ink hover:bg-ink/10'
+                selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-accent'
               }`}
               aria-pressed={selected}
             >
@@ -109,14 +109,14 @@ export function MatchCard({
 
       {/* Side dishes — exact score / BTTS / over-under (always shown while open) */}
       {!disabled && (
-        <div className="mt-3 space-y-3 border-t border-ink/10 pt-3">
-          <p className="text-center text-[11px] font-body font-bold uppercase tracking-wide text-orange">
+        <div className="mt-3 space-y-3 border-t border-border pt-3">
+          <p className="text-center text-[11px] font-body font-bold uppercase tracking-wide text-primary">
             🍟 Side dishes
           </p>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-ink/50">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
               {COPY.fullCourse} — exact score{' '}
-              <span className="font-normal normal-case text-ink/40">(+25)</span>
+              <span className="font-normal normal-case text-muted-foreground">(+25)</span>
             </p>
             <ExactScoreStepper
               key={exactPick?.selection ?? 'new'} /* remount if the stored pick changes (e.g. server correction) */
@@ -154,13 +154,13 @@ export function MatchCard({
 
       {/* Result summary */}
       {finished && (
-        <div className="mt-3 border-t border-ink/10 pt-2 text-center text-sm">
+        <div className="mt-3 border-t border-border pt-2 text-center text-sm">
           {outcomePick ? (
-            <p className={`font-display ${outcomeCorrect ? 'text-lettuce' : 'text-tomato'}`}>
+            <p className={`font-display ${outcomeCorrect ? 'text-lettuce' : 'text-destructive'}`}>
               {outcomeCorrect ? `${COPY.chefsKiss}! +${outcomePick.points_awarded}` : `${COPY.burntToast}. +0`}
             </p>
           ) : (
-            <p className="font-body text-ink/50">{COPY.skippedLunch}</p>
+            <p className="font-body text-muted-foreground">{COPY.skippedLunch}</p>
           )}
           <div className="mt-1 flex flex-wrap justify-center gap-1">
             {exactPick && <ResultChip label={COPY.fullCourse} pts={exactPick.points_awarded} />}
@@ -169,7 +169,7 @@ export function MatchCard({
           </div>
         </div>
       )}
-      {error && <p className="mt-2 text-center text-xs text-tomato">{error}</p>}
+      {error && <p className="mt-2 text-center text-xs text-destructive">{error}</p>}
     </div>
   )
 }
@@ -202,7 +202,7 @@ function ExactScoreStepper({
         type="button"
         disabled={busy || !dirty}
         onClick={() => onSubmit(`${h}-${a}`)}
-        className="ml-1 min-h-tap rounded-lg bg-orange px-3 font-display text-white text-sm active:scale-95 disabled:opacity-40"
+        className="ml-1 min-h-tap rounded-lg bg-primary px-3 font-display text-primary-foreground text-sm active:scale-95 disabled:opacity-40"
       >
         {busy ? '…' : dirty ? 'Set' : 'Set ✓'}
       </button>
@@ -223,15 +223,15 @@ function Stepper({
 }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="text-[10px] font-bold text-ink/50">{code}</span>
+      <span className="text-[10px] font-bold text-muted-foreground">{code}</span>
       <div className="flex items-center gap-1">
-        <button type="button" onClick={onDec} aria-label={`${code} minus`} className="h-8 w-8 rounded-full bg-ink/5 font-display active:scale-90 hover:bg-ink/10">
+        <button type="button" onClick={onDec} aria-label={`${code} minus`} className="h-8 w-8 rounded-full bg-muted font-display active:scale-90 hover:bg-accent">
           −
         </button>
         <span className="w-6 text-center font-display text-lg" aria-live="polite">
           {n}
         </span>
-        <button type="button" onClick={onInc} aria-label={`${code} plus`} className="h-8 w-8 rounded-full bg-ink/5 font-display active:scale-90 hover:bg-ink/10">
+        <button type="button" onClick={onInc} aria-label={`${code} plus`} className="h-8 w-8 rounded-full bg-muted font-display active:scale-90 hover:bg-accent">
           +
         </button>
       </div>
@@ -254,7 +254,7 @@ function Toggle({
 }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-wide text-ink/50">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
       <div className="mt-1 grid grid-cols-2 gap-1" role="group" aria-label={label}>
         {options.map(([val, lbl]) => {
           const selected = value === val
@@ -266,7 +266,7 @@ function Toggle({
               onClick={() => onChoose(val)}
               aria-pressed={selected}
               className={`min-h-tap rounded-lg py-1.5 text-sm font-body font-bold transition active:scale-95 disabled:opacity-50 ${
-                selected ? 'bg-orange text-white' : 'bg-ink/5 text-ink hover:bg-ink/10'
+                selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-accent'
               }`}
             >
               {lbl}
@@ -283,7 +283,7 @@ function ResultChip({ label, pts }: { label: string; pts: number | null }) {
   return (
     <span
       className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
-        win ? 'bg-lettuce/20 text-lettuce' : 'bg-tomato/15 text-tomato'
+        win ? 'bg-lettuce/20 text-lettuce' : 'bg-destructive/15 text-destructive'
       }`}
     >
       {label} {win ? `+${pts}` : '+0'}
@@ -293,7 +293,7 @@ function ResultChip({ label, pts }: { label: string; pts: number | null }) {
 
 function Tag() {
   return (
-    <span className="rounded bg-bun px-1 text-[10px] font-body font-bold text-ink" title="Designated underdog — outcome points ×2">
+    <span className="rounded bg-bun px-1 text-[10px] font-body font-bold text-navy" title="Designated underdog — outcome points ×2">
       ×2
     </span>
   )

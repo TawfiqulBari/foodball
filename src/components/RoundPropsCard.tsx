@@ -47,12 +47,12 @@ export function RoundPropsCard({
     `${teamLabel(m.home_team)} v ${teamLabel(m.away_team)} (underdog ${teamLabel(m.underdog_team)})`
 
   return (
-    <div className="rounded-card bg-white text-ink shadow-sm ring-1 ring-orange/40 p-4 mb-3">
+    <div className="rounded-card bg-card text-card-foreground shadow-sm border border-primary/40 p-4 mb-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-orange text-lg">Round specials 🍽️</h2>
-        {locked && <span className="text-xs font-body text-tomato">Locked</span>}
+        <h2 className="font-display text-primary text-lg">Round specials 🍽️</h2>
+        {locked && <span className="text-xs font-body text-destructive">Locked</span>}
       </div>
-      <p className="text-xs font-body text-ink/60">
+      <p className="text-xs font-body text-muted-foreground">
         Lock at the round's first kickoff. Settle when the round finishes.
       </p>
 
@@ -98,7 +98,7 @@ export function RoundPropsCard({
         onChoose={(s) => choose('top_chef', s)}
       />
 
-      {err && <p className="mt-2 text-xs text-tomato font-body">{err}</p>}
+      {err && <p className="mt-2 text-xs text-destructive font-body">{err}</p>}
     </div>
   )
 }
@@ -127,29 +127,29 @@ function PropRow({
 }) {
   const settled = current && current.points_awarded !== null
   return (
-    <div className="mt-3 border-t border-ink/10 pt-2">
+    <div className="mt-3 border-t border-border pt-2">
       <div className="flex items-center justify-between">
-        <span className="font-display text-ink">{title}</span>
+        <span className="font-display text-foreground">{title}</span>
         {settled && (
-          <span className={`text-xs font-bold ${(current!.points_awarded ?? 0) > 0 ? 'text-lettuce' : 'text-tomato'}`}>
+          <span className={`text-xs font-bold ${(current!.points_awarded ?? 0) > 0 ? 'text-lettuce' : 'text-destructive'}`}>
             {(current!.points_awarded ?? 0) > 0 ? `+${current!.points_awarded}` : '+0'}
           </span>
         )}
       </div>
-      <p className="text-xs font-body text-ink/50">{hint}</p>
+      <p className="text-xs font-body text-muted-foreground">{hint}</p>
 
       {locked ? (
-        <p className="mt-1 text-sm font-body text-ink/80">
-          {current ? currentLabel(current.selection) : <span className="text-ink/40">{COPY.skippedLunch}</span>}
+        <p className="mt-1 text-sm font-body text-muted-foreground">
+          {current ? currentLabel(current.selection) : <span className="text-muted-foreground">{COPY.skippedLunch}</span>}
         </p>
       ) : options.length === 0 ? (
-        <p className="mt-1 text-xs font-body text-ink/40 italic">{emptyNote}</p>
+        <p className="mt-1 text-xs font-body text-muted-foreground italic">{emptyNote}</p>
       ) : (
         <select
           disabled={busy}
           value={current?.selection ?? ''}
           onChange={(e) => onChoose(e.target.value)}
-          className="mt-1 w-full min-h-tap rounded-lg bg-white px-3 text-ink font-body text-sm ring-1 ring-ink/10 focus:ring-orange disabled:opacity-60"
+          className="mt-1 w-full min-h-tap rounded-lg bg-background border border-input px-3 text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
         >
           <option value="" disabled>
             {busy ? 'Saving…' : 'Choose…'}

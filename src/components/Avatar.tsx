@@ -20,7 +20,7 @@ export function Avatar({
       alt=""
       width={size}
       height={size}
-      className={`rounded-full bg-ink/10 ${className}`}
+      className={`rounded-full bg-muted ${className}`}
       style={{ width: size, height: size }}
     />
   )
