@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Market, MatchPick, MatchRow, Outcome, Team } from '../lib/database.types'
-import { countdownToLock, isLocked, kickoffLabel } from '../lib/format'
+import { awaitingResult, countdownToLock, isLocked, kickoffLabel } from '../lib/format'
 import { COPY } from '../lib/copy'
 
 const OUTCOMES: Outcome[] = ['home', 'draw', 'away']
@@ -66,6 +66,8 @@ export function MatchCard({
         </span>
         {finished ? (
           <span className="font-semibold text-foreground">FT</span>
+        ) : liveNow && awaitingResult(match.kickoff) ? (
+          <span className="font-semibold text-muted-foreground">⏳ awaiting result</span>
         ) : liveNow ? (
           <span className="font-semibold text-destructive animate-pulse">● LIVE</span>
         ) : locked ? (

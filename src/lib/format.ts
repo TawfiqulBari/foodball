@@ -20,6 +20,14 @@ export function countdownToLock(kickoffIso: string, now: Date = new Date()): str
   return `${m}m`
 }
 
+/** A 'live' match is "awaiting result" once it's well past full-time but still
+ *  unsettled — common when results come only from openfootball, whose feed lags.
+ *  ~150 min covers 90' + half-time + generous stoppage. Display-only: it never
+ *  changes the data, just avoids showing a pulsing "LIVE" for a match that's over. */
+export function awaitingResult(kickoffIso: string, now: Date = new Date()): boolean {
+  return now.getTime() - new Date(kickoffIso).getTime() > 150 * 60_000
+}
+
 /** Local kickoff time label, e.g. "Thu 16:00". */
 export function kickoffLabel(kickoffIso: string): string {
   const d = new Date(kickoffIso)

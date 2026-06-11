@@ -74,14 +74,16 @@ Caveats for the public surface:
 - **Signups are gated** to an email-domain allowlist (`0015`) — seeded `infosonik.com`,
   managed in Admin → Launch tools. Safe to share the URL; add other work domains there
   as needed. (Fail-open if the allowlist is ever emptied.)
-- **Live scores are automated but lag.** `foodball-auto-live` flips matches live at
-  kickoff and `foodball-openfootball-sync` (`0014`) self-settles finished group matches
-  from openfootball — both token-free. But openfootball's volunteer feed lags real time
-  (and the 2026 file is fixtures-only until results are published), so **admin entry is
-  the instant, authoritative path** (Admin → set result → goal commentary + overlays +
-  scoring; always wins). A match left `live` for a while is normal — finish it by
-  entering the score. A `football-data.org` token could add faster scores via
-  `sync-results`, but its free tier may not cover WC2026.
+- **Live scores: openfootball-only (owner's choice).** `foodball-auto-live` flips
+  matches live at kickoff and `foodball-openfootball-sync` (`0014`) self-settles finished
+  group matches from openfootball — fully hands-off, no token, no admin entry. The
+  settle parser is validated against openfootball's real `score.ft[]` format (2022 file).
+  Caveat: openfootball's volunteer feed lags real time (the 2026 file is fixtures-only
+  until results are published), so a match that's really over but unsettled shows
+  **"⏳ awaiting result"** (not a pulsing LIVE) once >150 min past kickoff
+  (`awaitingResult()` in `format.ts`); it settles itself when openfootball publishes.
+  Admin manual entry still exists as a fallback (always wins) but is intentionally unused
+  here. A `football-data.org` token could add faster scores via `sync-results`.
 - SMTP is off (password-reset email disabled; signup works).
 
 ## Milestones & commits

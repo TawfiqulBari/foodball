@@ -2,23 +2,39 @@ import { useEffect, useState } from 'react'
 import type { Team } from '../lib/database.types'
 import type { Picker, Side } from '../lib/matchField'
 import { kitFor, drawKit } from '../lib/kits'
+import { awaitingResult } from '../lib/format'
 import { FieldPlayer, type PlayerState } from './FieldPlayer'
 
-/** Approximate live match clock from kickoff (we have no minute-by-minute feed):
- *  the running match minute, clamped to 90+'. Ticks every 10s so it stays current. */
-function LiveMinute({ kickoff }: { kickoff: string }) {
+/** Status for a 'live' match: the approximate match clock (no minute-by-minute
+ *  feed → running minute from kickoff, clamped to 90+') while it's plausibly in
+ *  play, then "awaiting result" once it's well past full-time but still unsettled
+ *  (openfootball settles it when it publishes). Ticks every 10s. */
+function LiveStatus({ kickoff }: { kickoff: string }) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 10_000)
     return () => clearInterval(id)
   }, [])
+  const nowDate = new Date(now)
   const mins = Math.floor((now - new Date(kickoff).getTime()) / 60_000)
   if (Number.isNaN(mins)) return null
-  const label = mins >= 90 ? "90+'" : `${Math.max(1, mins)}'`
+
+  if (awaitingResult(kickoff, nowDate)) {
+    return (
+      <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-body font-bold text-muted-foreground" title="Full time — waiting for openfootball to publish the result">
+        ⏳ awaiting result
+      </span>
+    )
+  }
   return (
-    <span className="ml-1 rounded-md bg-black/30 px-1.5 py-0.5 text-[11px] font-display tabular-nums text-white" aria-label="match clock">
-      {label}
-    </span>
+    <>
+      <span className="ml-1 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-body font-bold text-destructive-foreground animate-pulse">
+        ● LIVE
+      </span>
+      <span className="ml-1 rounded-md bg-black/30 px-1.5 py-0.5 text-[11px] font-display tabular-nums text-white" aria-label="match clock">
+        {mins >= 90 ? "90+'" : `${Math.max(1, mins)}'`}
+      </span>
+    </>
   )
 }
 
@@ -93,13 +109,12 @@ export function MatchPitch({
         <span className="flex items-center gap-1 text-lg">
           {awayCode} {away?.flag_emoji}
         </span>
-        {live ? (
-          <>
-            <span className="ml-1 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-body font-bold text-destructive-foreground animate-pulse">
-              ● LIVE
-            </span>
-            {kickoff && <LiveMinute kickoff={kickoff} />}
-          </>
+        {live && kickoff ? (
+          <LiveStatus kickoff={kickoff} />
+        ) : live ? (
+          <span className="ml-1 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-body font-bold text-destructive-foreground animate-pulse">
+            ● LIVE
+          </span>
         ) : finished ? (
           <span className="ml-1 text-[11px] font-body text-muted-foreground">FT</span>
         ) : (
