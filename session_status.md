@@ -1,15 +1,17 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-06-11 (live tournament session) · branch `main`_
+_Last updated: 2026-06-14 (fairness fixes + logic audit) · branch `live-fixes-2026-06-14`_
 
 ## TL;DR
 
 **All five milestones (M1–M5) are built and live, and the league is running on
-real World Cup 2026 fixtures at https://foodball.tawfiqulbari.work.** This session
-took it from demo data to the real, in-progress tournament: real fixtures, a
-token-free auto-live + openfootball auto-settle pipeline, three late-launch grace
-windows, a green professional theme, an in-app guide, live commentary, accurate
-national-team jerseys, a live match clock, and a signup domain allowlist.
+real World Cup 2026 fixtures at https://foodball.tawfiqulbari.work.** Earlier sessions
+took it from demo data to the real, in-progress tournament (real fixtures, token-free
+auto-live + openfootball auto-settle, grace windows, theme, guide, commentary, jerseys,
+live clock, signup allowlist). **This session (2026-06-14)** hardened fairness mid-tournament:
+match picks now **lock strictly at kickoff** (`0016`), the **award pickers are populated**
+(`0017`, 239 players), **post-kickoff picks were voided + scores recomputed** with a new
+**Red Cards** screen (`0018`), and a **26-finding logic audit** was remediated (`0019`).
 Authoritative scoring/locking still lives in Postgres; the client never computes points.
 
 ## Live deployment
@@ -64,6 +66,36 @@ Foundation (earlier in the build):
   signup is rejected ("sign-ups are limited to approved email domains"); `@infosonik.com`
   succeeds. Fail-open if the allowlist is ever emptied.
 
+### This session (2026-06-14: fairness fixes, red cards, logic audit)
+- **Match picks lock strictly at kickoff** (`0016`): the `0011` match-pick grace let
+  players set/change predictions after a match had started (even on live matches; one pick
+  landed ~5.5h post-kickoff). The lock trigger now rejects any pick on a started/live match
+  with **no grace bypass**; the grace column/RPC remain but inert, and the admin control was
+  removed. Long-shot/round-props graces untouched. Verified by the rewritten `m_grace_test.sql`.
+- **Award pickers populated** (`0017`): `players_catalog` was never seeded, so Golden Boot /
+  Golden Glove / Best Young Player showed "Squads not synced yet". Seeded **239 web-verified
+  players across all 48 live teams** (a 24-agent web-grounded workflow → gather + verify).
+  MyPicks now shows flag + country and filters Golden Glove to keepers.
+- **Red Cards** (`0018`): the **23 participant picks set after kickoff were voided** (admin/Chef
+  tawfiq's 4 excluded — admin isn't competing), recorded in a new `red_cards` table with the
+  points cut, `score_events` deleted, leaderboard recomputed (Emon −45, Fahad −25, pavel −20,
+  nayem −20, ST23 −10). New **Red Cards** bottom-nav screen shows deductions per participant.
+  Reversible backup `docs/voided-picks-backup-2026-06-14.sql`; void script
+  `scripts/void-post-kickoff-picks.sql`; forensic report `docs/post-kickoff-picks-audit.md`.
+- **Logic audit + remediation** (`0019`): a 9-subsystem multi-agent audit with adversarial
+  verification found **26 confirmed flaws** (`docs/logic-audit-2026-06-14.md`); **24 fixed**.
+  Highlights: tournament anti-cheat — `created_at` is now server-stamped + immutable and the
+  scorer ranks the active pick by immutable `id` (closes a max-points exploit); cast-safe
+  scorers + numeric CHECKs (no settlement griefing); RLS reveals others' tourney/round picks
+  **only while locked** (no copy-then-pick); self-correcting round completion; `score_events`
+  cleanup on pick delete; revision window tolerates empty/finished rounds; `fb_ingest_result`
+  never un-finishes a match; signup allowlist now **fails closed** + enforced on email change;
+  `sync-results` Edge Function resolves real `api_match_id`s + routes openfootball through the
+  in-DB settler. New admin RPCs `fb_admin_remove_tournament_result` / `fb_admin_set_round_complete`.
+  Two not changed (by design): single-finalist scoring, and stuck-live (admin override).
+- **Deployed**: rebuilt + swapped the `foodball-web` container (new bundle live, HTTP 200);
+  DB migrations `0016`–`0019` applied to the live stack. Branch `live-fixes-2026-06-14` pushed.
+
 To make yourself admin after signing up:
 ```bash
 docker exec -i supabase_db_foodball psql -U postgres -d postgres \
@@ -101,8 +133,13 @@ Caveats for the public surface:
 
 - `npm run lint` (`tsc --noEmit`, strict, no `any`) passes; production `web` image
   builds and is deployed.
-- `npx vitest run` — **74 Vitest** across `decay.test.ts`, `resultMoments.test.ts`,
+- `npx vitest run` — **76 Vitest** across `decay.test.ts`, `resultMoments.test.ts`,
   `matchField.test.ts`, `format.test.ts`.
+- **`supabase/tests/m_audit_fixes_test.sql`** (new, `0019`) — runs green on the live stack:
+  `created_at` is immutable to an untrusted role (anti-cheat), `total_goals` is numeric/bounded,
+  deleting a pick cleans its `score_events`, and the scorer's numeric cast is griefing-safe.
+- **Logic audit** (9-subsystem + adversarial-verify workflow): 26 confirmed of 37 candidates,
+  24 remediated in `0019` — see `docs/logic-audit-2026-06-14.md`.
 - **`supabase/tests/m_grace_test.sql`** (new) — runs green against the live CLI stack:
   match-pick grace ON allows a post-kickoff still-playable pick; grace OFF locks it; a
   finished match is never pickable (incl. the audited future-kickoff edge); forged
@@ -162,8 +199,12 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
   tier may not cover WC2026.
 - **Knockout fixtures** — added once group standings decide the teams (the importer
   only does the 72 group games; knockout slots are placeholders in openfootball).
-- **Squads sync** to populate `players_catalog` — until then Clean Plate / Top Chef /
-  Golden Boot pickers are empty; Top Chef + awards settle from admin data.
+- **Full squads sync** — `0017` seeded a curated 239-player `players_catalog` (all 48 teams)
+  so the award pickers work; a complete per-squad sync (and Clean Plate / Top Chef settlement)
+  is still admin-entered.
+- **Match-pick grace is gone** (`0016`) — picks lock at kickoff with no grace. The long-shot
+  and round-props graces remain (admin-tunable); their read-visibility now tracks the lock so
+  picks can't be copied during a grace window (`0019`).
 - **Signups are gated** to `@infosonik.com` (`0015`) — add colleagues' other work
   domains in Admin → Launch tools → "Who can sign up" before sharing if needed.
 - **Optional polish:** `lottie-react` uninstalled (M4 uses framer-motion + mascot +
@@ -171,7 +212,7 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
 
 ## Notes for the next session
 
-- Migrations are additive and numbered (`0001`→`0015`); never edit an applied one in
+- Migrations are additive and numbered (`0001`→`0019`); never edit an applied one in
   place. Apply new ones to the live CLI stack with
   `docker exec -i supabase_db_foodball psql -U postgres -d postgres -f -` and register
   the version in `supabase_migrations.schema_migrations`.
@@ -179,11 +220,15 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
   a token), `foodball-auto-live` (every 1m, token-free live flip), `foodball-live-atmosphere`
   (every 2m, brand-voice colour lines for live matches), `foodball-openfootball-sync`
   (every 10m, token-free final-score auto-settle — `0014`, needs the `http` extension).
-- **Three grace windows** share one `public.settings` row (singleton). Each
+- **Grace windows** share one `public.settings` row (singleton). Each
   `fb_*_grace_active()` reads only its own column; admin setters are `fb_admin_set_*_grace`.
+  As of `0016` the **match-pick** grace is inert (the lock ignores it — picks lock at kickoff);
+  only the long-shot + round-props graces still affect anything.
 - Redeploy the SPA after frontend changes:
   `VITE_SUPABASE_URL=https://foodball.tawfiqulbari.work VITE_SUPABASE_ANON_KEY=<anon> docker compose -p foodball build web && docker compose -p foodball up -d --no-deps web`.
 - TS decay (`src/lib/decay.ts`) and the SQL `fb_decay_*` helpers both read
   `decay_schedule` so they can't drift — re-run **both** Vitest and the SQL suites after
   touching either.
-- `vite-plugin-pwa` requires `workbox-build` pinned to `7.1.0` (7.3+ breaks its ESM `require`).
+- `vite-plugin-pwa` needs `workbox-build` kept on **7.1.x** (declared `^7.1.0`; 7.3+ breaks its ESM `require`).
+- **pg_cron jobs** now also include nothing new from `0016`–`0019` (those are schema/logic, not cron).
+  The void was a one-off (`scripts/void-post-kickoff-picks.sql`), not scheduled.

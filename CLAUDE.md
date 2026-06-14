@@ -9,15 +9,19 @@ fun layer), and M5 (the optional Remotion recap) are all built and their accepta
 checklists pass.** The product is feature-complete against the spec.
 
 **🔴 LIVE NOW** at https://foodball.tawfiqulbari.work on the **real World Cup 2026**
-(48 teams, 72 group-stage fixtures imported from openfootball; matches go live at
-their real kickoff via a token-free pg_cron). **Scores are admin-entered** until a
-results feed is wired (see `session_status.md` "Remaining"). The remaining work is
-that one data wiring + knockout fixtures, not features. When extending, keep verifying
-each milestone's acceptance checklist (spec §9) and re-running the test suites. See
-`session_status.md` for the latest run/verify snapshot + the live-ops details. The
-canonical source of truth remains `plans/worldcup-league-claude-code-prompt.md` — read
-it before extending. Brand assets live in `plans/` and `public/branding/` (+ a
-`/branding/` copy the spec expects).
+(48 teams, 72 group-stage fixtures imported from openfootball). Matches go live at
+their real kickoff (`foodball-auto-live`) and **self-settle from openfootball**
+(`foodball-openfootball-sync`, `0014`), both token-free; **admin entry is the instant,
+authoritative override**. **Match picks lock strictly at kickoff** (`0016`, no grace).
+The **2026-06-14 session** added fairness hardening: the award pickers are seeded
+(`0017`), post-kickoff picks were **voided + recomputed** with a **Red Cards** screen
+(`0018`), and a 26-finding **logic audit** was remediated (`0019` — see
+`docs/logic-audit-2026-06-14.md`). Remaining is data wiring (knockout fixtures, a full
+squads sync), not features. When extending, keep verifying each milestone's acceptance
+checklist (spec §9) and re-running the test suites. See `session_status.md` for the
+latest run/verify snapshot + the live-ops details. The canonical source of truth remains
+`plans/worldcup-league-claude-code-prompt.md` — read it before extending. Brand assets
+live in `plans/` and `public/branding/` (+ a `/branding/` copy the spec expects).
 
 What exists now:
 - **Frontend** — Vite + React 18 + TS (strict) + Tailwind in `src/` (screens:
