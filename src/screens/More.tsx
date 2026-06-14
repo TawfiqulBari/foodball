@@ -44,7 +44,7 @@ export function More() {
         <h3 className="mt-3 font-display text-lg">Per match</h3>
         <ul className="mt-1 text-sm list-disc list-inside space-y-1">
           <li>Correct outcome — <strong>{MARKET_POINTS.outcome} pts</strong> ({COPY.chefsKiss})</li>
-          <li>Exact final score — <strong>+{MARKET_POINTS.exact_score} pts</strong> bonus ({COPY.fullCourse})</li>
+          <li>Exact final score — <strong>{MARKET_POINTS.exact_score} pts</strong>, scored on its own ({COPY.fullCourse})</li>
           <li>Both teams to score — <strong>{MARKET_POINTS.btts} pts</strong></li>
           <li>Total goals over/under 2.5 — <strong>{MARKET_POINTS.over_under} pts</strong></li>
           <li>Picked the underdog and they win — outcome <strong>×{UPSET_MULTIPLIER}</strong> ({COPY.spice})</li>

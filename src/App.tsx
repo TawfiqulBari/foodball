@@ -10,6 +10,7 @@ import { MyPicks } from './screens/MyPicks'
 import { More } from './screens/More'
 import { Admin } from './screens/Admin'
 import { Guide } from './screens/Guide'
+import { RedCards } from './screens/RedCards'
 import { ResultMoments } from './components/ResultMoments'
 import { ThemeToggle } from './components/ThemeToggle'
 import { isOnboarded } from './lib/avatar'
@@ -70,6 +71,7 @@ export default function App() {
         {tab === 'matchday' && <MatchDay />}
         {tab === 'leaderboard' && <Leaderboard />}
         {tab === 'mypicks' && <MyPicks />}
+        {tab === 'redcards' && <RedCards />}
         {tab === 'guide' && (
           <Guide
             firstRun={!seenGuide}

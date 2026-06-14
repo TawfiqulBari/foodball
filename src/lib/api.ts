@@ -10,6 +10,7 @@ import type {
   PlayerCatalog,
   Profile,
   Prop,
+  RedCard,
   RoundProp,
   RoundRow,
   Team,
@@ -181,10 +182,11 @@ export async function submitRoundProp(
 /** All of the current user's tournament picks (full revision history), newest
  *  first. The active pick per type is the first one of that type. */
 export async function fetchMyTourneyPicks(): Promise<TourneyPick[]> {
+  // Active pick per type = highest id (matches the server scorer, which ranks by
+  // the immutable identity column, not the now-server-stamped created_at).
   const { data, error } = await supabase
     .from('tourney_picks')
     .select('*')
-    .order('created_at', { ascending: false })
     .order('id', { ascending: false })
   if (error) throw error
   return data ?? []
@@ -242,22 +244,22 @@ export async function adminSetRoundPropsGrace(until: string | null): Promise<voi
   if (error) throw error
 }
 
-/** The match-pick launch-grace cut-off (ISO) or null. While now() < this, per-match
- *  markets stay open past kickoff for matches that are still playable (live/upcoming);
- *  a finished match is never pickable. Used because the league launched mid-round. */
-export async function fetchMatchPicksGrace(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('settings')
-    .select('match_picks_grace_until')
-    .eq('id', true)
-    .maybeSingle()
-  if (error) throw error
-  return data?.match_picks_grace_until ?? null
-}
+// Match picks lock at kickoff (no grace) — see migration 0016. The match-pick
+// grace RPC/column remain in the DB for back-compat but are inert, so there is
+// no client wrapper for them anymore.
 
-export async function adminSetMatchPicksGrace(until: string | null): Promise<void> {
-  const { error } = await supabase.rpc('fb_admin_set_match_picks_grace', { p_until: until })
+// ─── Red cards (voided post-kickoff picks) ───────────────────────────────────
+
+/** Every red card (a voided pick + the points it cost), newest first. Readable
+ *  by everyone — the "Red Cards" page is intentionally public/transparent. */
+export async function fetchRedCards(): Promise<RedCard[]> {
+  const { data, error } = await supabase
+    .from('red_cards')
+    .select('*')
+    .order('points_deducted', { ascending: false })
+    .order('picked_at', { ascending: false })
   if (error) throw error
+  return data ?? []
 }
 
 // ─── Signup domain allowlist (admin) ─────────────────────────────────────────

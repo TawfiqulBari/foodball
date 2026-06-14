@@ -21,11 +21,13 @@ import { decayBucket, decayedPoints } from '../lib/decay'
 import { COPY } from '../lib/copy'
 
 type Kind = 'team' | 'player' | 'number'
-const PICK_META: { type: TourneyPickType; label: string; kind: Kind }[] = [
+type Meta = { type: TourneyPickType; label: string; kind: Kind; positions?: string[] }
+const PICK_META: Meta[] = [
   { type: 'champion', label: 'Champion 🏆', kind: 'team' },
   { type: 'finalist', label: 'A finalist 🥈', kind: 'team' },
   { type: 'golden_boot', label: 'Golden Boot 👟', kind: 'player' },
-  { type: 'golden_glove', label: 'Golden Glove 🧤', kind: 'player' },
+  // Golden Glove is a keeper award — only offer goalkeepers.
+  { type: 'golden_glove', label: 'Golden Glove 🧤', kind: 'player', positions: ['GK'] },
   { type: 'young_player', label: 'Best Young Player ⭐', kind: 'player' },
   { type: 'total_goals', label: 'Total tournament goals', kind: 'number' },
 ]
@@ -144,7 +146,7 @@ function TourneyPickRow({
   windowOpen,
   onSet,
 }: {
-  meta: { type: TourneyPickType; label: string; kind: Kind }
+  meta: Meta
   teams: Map<number, Team>
   players: PlayerCatalog[]
   schedule: DecayRow[]
@@ -161,7 +163,12 @@ function TourneyPickRow({
 
   const label = (sel: string): string => {
     if (meta.kind === 'team') return teams.get(Number(sel))?.name ?? sel
-    if (meta.kind === 'player') return players.find((p) => String(p.id) === sel)?.name ?? sel
+    if (meta.kind === 'player') {
+      const p = players.find((p) => String(p.id) === sel)
+      if (!p) return sel
+      const t = p.team != null ? teams.get(p.team) : undefined
+      return t ? `${p.name} (${t.fifa_code})` : p.name
+    }
     return sel
   }
 
@@ -172,6 +179,17 @@ function TourneyPickRow({
   const loyal = meta.type === 'champion' && activePick && history.length === 1
 
   const teamOpts = [...teams.values()].sort((a, b) => a.name.localeCompare(b.name))
+  // Players grouped by nation, then name — a flat 48-team list is easier to scan
+  // when teammates sit together and each option carries its country. Award-specific
+  // position filter (e.g. Golden Glove → goalkeepers only).
+  const playerOpts = players
+    .filter((p) => !meta.positions || (p.position != null && meta.positions.includes(p.position)))
+    .slice()
+    .sort((a, b) => {
+    const ta = a.team != null ? teams.get(a.team)?.name ?? '' : ''
+    const tb = b.team != null ? teams.get(b.team)?.name ?? '' : ''
+    return ta.localeCompare(tb) || a.name.localeCompare(b.name)
+  })
 
   async function submit() {
     if (!draft) return
@@ -222,8 +240,9 @@ function TourneyPickRow({
           {meta.kind === 'number' ? (
             <input
               inputMode="numeric"
+              maxLength={4}
               value={draft}
-              onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ''))}
+              onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
               placeholder="e.g. 160"
               className="min-h-tap w-28 rounded-lg bg-background border border-input px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label={meta.label}
@@ -246,11 +265,16 @@ function TourneyPickRow({
                   ))
                 : players.length === 0
                   ? <option value="" disabled>Squads not synced yet</option>
-                  : players.map((p) => (
-                      <option key={p.id} value={String(p.id)}>
-                        {p.name}
-                      </option>
-                    ))}
+                  : playerOpts.map((p) => {
+                      const t = p.team != null ? teams.get(p.team) : undefined
+                      return (
+                        <option key={p.id} value={String(p.id)}>
+                          {t ? `${t.flag_emoji} ` : ''}
+                          {p.name}
+                          {t ? ` · ${t.fifa_code}` : ''}
+                        </option>
+                      )
+                    })}
             </select>
           )}
           <button

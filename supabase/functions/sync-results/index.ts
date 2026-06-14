@@ -24,7 +24,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { z } from 'https://esm.sh/zod@3.23.8'
 
 interface Ingest {
-  apiId: string
+  homeCode: string | null // home team FIFA/TLA code — resolved to our api_match_id
+  awayCode: string | null
   home: number
   away: number
   status: 'live' | 'finished'
@@ -44,17 +45,12 @@ const fdMatch = z.object({
 })
 const fdResponse = z.object({ matches: z.array(fdMatch) })
 
-// openfootball played match (has score1/score2 once played).
-const ofMatch = z.object({
-  date: z.string(),
-  team1: z.string(),
-  team2: z.string(),
-  score1: z.number().nullable().optional(),
-  score2: z.number().nullable().optional(),
-})
-const ofResponse = z.object({
-  rounds: z.array(z.object({ matches: z.array(ofMatch).default([]) })),
-})
+// openfootball worldcup.json is a FLAT matches[] (score1/score2 or score.ft[]). We
+// don't re-parse it here — the fallback hands the raw feed to the in-DB
+// fb_settle_from_openfootball_json(), which matches by team name, supports both
+// score shapes, and preserves manual-result precedence.
+const OPENFOOTBALL_URL =
+  'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json'
 
 function serviceClient() {
   const url = Deno.env.get('SUPABASE_URL')
@@ -119,27 +115,9 @@ async function fromFootballData(): Promise<Ingest[]> {
     // group-stage outcome. KNOCKOUT precision — the regulation-vs-ET split and a
     // penalty-shootout winner — is best entered by the admin (fb_admin_set_result
     // with p_home_et/p_winner), which a later API poll never overwrites (manual wins).
-    out.push({ apiId: `FD-${m.id}`, home, away, status, winnerCode })
-  }
-  return out
-}
-
-async function fromOpenFootball(): Promise<Ingest[]> {
-  const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json')
-  if (!res.ok) throw new Error(`openfootball responded ${res.status}`)
-  const parsed = ofResponse.parse(await res.json())
-  const out: Ingest[] = []
-  for (const r of parsed.rounds) {
-    for (const m of r.matches) {
-      if (m.score1 == null || m.score2 == null) continue // not played yet
-      out.push({
-        apiId: `OF-${m.date}-${m.team1}-${m.team2}`,
-        home: m.score1,
-        away: m.score2,
-        status: 'finished', // openfootball is daily, not live — treat as final
-        winnerCode: null, // openfootball has no TLA here; group winner derived, knockouts via admin
-      })
-    }
+    // We carry the team codes (not an invented id) so the handler can resolve our
+    // real api_match_id (WC26-…) by team — FD's own match ids never match ours.
+    out.push({ homeCode: m.homeTeam.tla ?? null, awayCode: m.awayTeam.tla ?? null, home, away, status, winnerCode })
   }
   return out
 }
@@ -148,36 +126,52 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 })
   const denied = await authorize(req)
   if (denied) return denied
+  const supabase = serviceClient()
   try {
-    let source = 'football-data.org'
-    let results: Ingest[]
-    try {
-      results = await fromFootballData()
-    } catch (primaryErr) {
-      source = `openfootball (fallback: ${(primaryErr as Error).message})`
-      results = await fromOpenFootball()
-    }
+    // Primary: football-data.org. Resolve each FD match to OUR real api_match_id by
+    // team code (FD's own ids are a different namespace and never match ours).
+    const fd = await fromFootballData()
+    const { data: teams } = await supabase.from('teams').select('id, fifa_code')
+    const codeOf = new Map((teams ?? []).map((t) => [t.id as number, t.fifa_code as string]))
+    const { data: ms } = await supabase.from('matches').select('api_match_id, home_team, away_team')
+    const idByCodes = new Map(
+      (ms ?? []).map((m) => [`${codeOf.get(m.home_team)}|${codeOf.get(m.away_team)}`, m.api_match_id as string]),
+    )
 
-    const supabase = serviceClient()
-    let scored = 0
-    let live = 0
-    let skipped = 0
-    for (const r of results) {
+    let scored = 0, live = 0, skipped = 0
+    for (const r of fd) {
+      const apiId = r.homeCode && r.awayCode ? idByCodes.get(`${r.homeCode}|${r.awayCode}`) : undefined
+      if (!apiId) { skipped++; continue } // not one of our fixtures (or code mismatch)
       const { data, error } = await supabase.rpc('fb_ingest_result', {
-        p_api_match_id: r.apiId,
+        p_api_match_id: apiId,
         p_home: r.home,
         p_away: r.away,
         p_status: r.status,
         p_winner_code: r.winnerCode,
       })
-      if (error) continue
+      if (error) { skipped++; continue }
       const outcome = String(data ?? '')
       if (outcome === 'scored') scored++
       else if (outcome.startsWith('updated')) live++
       else skipped++
     }
-    return Response.json({ ok: true, source, polled: results.length, scored, live, skipped })
-  } catch (e) {
-    return Response.json({ ok: false, error: (e as Error).message }, { status: 500 })
+    return Response.json({ ok: true, source: 'football-data.org', polled: fd.length, scored, live, skipped })
+  } catch (primaryErr) {
+    // Fallback: hand the raw openfootball feed to the tested in-DB settler, which
+    // matches by team name, handles both score shapes, and skips manual results.
+    try {
+      const res = await fetch(OPENFOOTBALL_URL)
+      if (!res.ok) throw new Error(`openfootball responded ${res.status}`)
+      const feed = await res.json()
+      const { data, error } = await supabase.rpc('fb_settle_from_openfootball_json', { p: feed })
+      if (error) throw error
+      return Response.json({
+        ok: true,
+        source: `openfootball (fallback: ${(primaryErr as Error).message})`,
+        settled: data,
+      })
+    } catch (e) {
+      return Response.json({ ok: false, error: (e as Error).message }, { status: 500 })
+    }
   }
 })

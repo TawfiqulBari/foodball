@@ -1,12 +1,13 @@
-import { BookOpen, ClipboardList, Goal, Menu, Settings, Trophy, Tv2, type LucideIcon } from 'lucide-react'
+import { BookOpen, ClipboardList, Goal, Menu, RectangleVertical, Settings, Trophy, Tv2, type LucideIcon } from 'lucide-react'
 
-export type Tab = 'matches' | 'matchday' | 'leaderboard' | 'mypicks' | 'guide' | 'more' | 'admin'
+export type Tab = 'matches' | 'matchday' | 'leaderboard' | 'mypicks' | 'guide' | 'redcards' | 'more' | 'admin'
 
 const TABS: { key: Tab; label: string; Icon: LucideIcon }[] = [
   { key: 'matches', label: 'Matches', Icon: Goal },
   { key: 'matchday', label: 'Stadium', Icon: Tv2 },
   { key: 'leaderboard', label: 'Food Chain', Icon: Trophy },
   { key: 'mypicks', label: 'Picks', Icon: ClipboardList },
+  { key: 'redcards', label: 'Red Cards', Icon: RectangleVertical },
   { key: 'guide', label: 'Guide', Icon: BookOpen },
   { key: 'more', label: 'More', Icon: Menu },
 ]

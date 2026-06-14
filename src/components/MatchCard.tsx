@@ -10,15 +10,12 @@ export function MatchCard({
   teams,
   picks,
   onPick,
-  graceActive = false,
 }: {
   match: MatchRow
   teams: Map<number, Team>
   /** This match's picks keyed by market. */
   picks: Map<Market, MatchPick>
   onPick: (market: Market, selection: string) => Promise<void>
-  /** Launch grace: keep match markets open past kickoff for a still-playable match. */
-  graceActive?: boolean
 }) {
   const [busyMarket, setBusyMarket] = useState<Market | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -27,11 +24,9 @@ export function MatchCard({
   const away = teams.get(match.away_team)
   const finished = match.status === 'finished'
   const liveNow = match.status === 'live'
-  // Grace reopens a live/upcoming match past kickoff; a finished match never reopens.
-  const graceOpen = graceActive && !finished
-  const kickoffPassed = isLocked(match.kickoff)
-  const locked = graceOpen ? false : kickoffPassed
-  const reopenedByGrace = graceOpen && kickoffPassed
+  // Picks lock the moment a match starts — kickoff passed OR already live. No
+  // grace: a prediction can never be set or changed once the match has begun.
+  const locked = isLocked(match.kickoff) || liveNow
   const underdogIsHome = match.underdog_team === match.home_team
   const underdogIsAway = match.underdog_team === match.away_team
 
@@ -76,12 +71,6 @@ export function MatchCard({
           <span className="font-semibold text-primary">⏱ {countdownToLock(match.kickoff)}</span>
         )}
       </div>
-
-      {reopenedByGrace && (
-        <p className="mt-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-1.5 text-center text-[11px] font-body text-foreground">
-          🍳 <span className="font-bold">Late launch</span> — picks still open for this match.
-        </p>
-      )}
 
       <div className="my-3 flex items-center justify-center gap-3 text-lg font-display">
         <span className="flex items-center gap-1">
@@ -206,7 +195,7 @@ function ExactScoreStepper({
   const [a, setA] = useState(() => Number(value?.split('-')[1] ?? 0))
   const dirty = value !== `${h}-${a}`
   const step = (setter: (n: number) => void, cur: number, d: number) =>
-    setter(Math.max(0, Math.min(9, cur + d)))
+    setter(Math.max(0, Math.min(19, cur + d))) // allow lopsided/high scorelines, not just 0–9
 
   return (
     <div className="mt-1 flex items-center justify-center gap-3 font-body">

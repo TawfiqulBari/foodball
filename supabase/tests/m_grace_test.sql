@@ -1,25 +1,32 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- FoodBall — launch-grace + pick-lock hardening acceptance test (0011/0013).
+-- FoodBall — launch-grace + pick-lock acceptance test (0011 / 0013 / 0016).
 -- Runs against the live CLI stack (all migrations + real fixtures applied).
 -- Transaction-wrapped + rolled back — creates a disposable match, toggles the
 -- grace windows, and never persists anything.
 --
 --   psql -v ON_ERROR_STOP=1 -f m_grace_test.sql
 --
--- Proves: (A) match-pick grace lets a normal user pick a post-kickoff, still-
--- playable match; (B) with grace OFF the same pick locks; (C/D) a FINISHED match
--- is never pickable — even with an anomalous future kickoff (audit bug #2);
--- (E) a client-supplied points_awarded is neutralized on INSERT (audit bug #1);
--- (F) a client cannot UPDATE points_awarded; (G) the three graces are independent.
+-- Proves the 0016 rule: per-match picks lock the moment a match STARTS, with NO
+-- grace bypass. Specifically:
+--   (A) an OPEN (pre-kickoff) match is pickable by a normal user;
+--   (E) a client-supplied points_awarded is neutralized on INSERT (0013 audit #1);
+--   (F) a client cannot UPDATE points_awarded (server-controlled);
+--   (B) once the match has STARTED (kickoff passed / live) NEITHER a new pick NOR
+--       a change to an existing pick is allowed — EVEN with match-pick grace ON;
+--   (C/D) a FINISHED match is never pickable, even with an anomalous future
+--       kickoff (0013 audit #2);
+--   (G) the long-shot + round-props graces are untouched and independent — the
+--       (now-inert) match-pick grace does not affect them.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP on
 begin;
 
--- A real user + a disposable past-kickoff, still-playable match between two teams.
+-- A real user + a disposable, still-OPEN match (future kickoff, scheduled) so the
+-- "legitimately pickable" cases (A/E/F) can set picks before we start the match.
 select id as uid from public.profiles limit 1
 \gset
 insert into public.matches (api_match_id, round_key, home_team, away_team, kickoff, status, result_source)
-  select 'GRACE-TEST-M', 'MD1', t1.id, t2.id, now() - interval '1 hour', 'live', 'api'
+  select 'GRACE-TEST-M', 'MD1', t1.id, t2.id, now() + interval '2 hours', 'scheduled', 'api'
   from (select id from public.teams order by id limit 1) t1,
        (select id from public.teams order by id offset 1 limit 1) t2
   returning id as mid
@@ -27,7 +34,7 @@ insert into public.matches (api_match_id, round_key, home_team, away_team, kicko
 -- Expose the match id to PL/pgSQL DO blocks (which can't see psql :vars).
 select set_config('app.mid', :'mid', true);
 
--- All three graces ON for the baseline.
+-- All three graces ON for the baseline — proving 0016 ignores match-pick grace.
 update public.settings set
   match_picks_grace_until  = now() + interval '1 day',
   round_props_grace_until  = now() + interval '1 day',
@@ -37,13 +44,13 @@ where id;
 -- Helper to act as the test user.
 \set claim '{"role":"authenticated","sub":"' :uid '"}'
 
-\echo '── A. grace ON: a normal user CAN pick a post-kickoff, still-playable match ─'
+\echo '── A. an OPEN (pre-kickoff) match is pickable by a normal user ─────────────'
 reset role;
 select set_config('request.jwt.claims', :'claim', true);
 set local role authenticated;
 insert into public.match_picks (user_id, match_id, market, selection)
   values (auth.uid(), :mid, 'outcome', 'home');
-\echo '   ✓ insert on a live (post-kickoff) match succeeded under grace'
+\echo '   ✓ insert on an open (pre-kickoff) match succeeded'
 
 \echo '── F. a client cannot UPDATE points_awarded (server-controlled) ───────────'
 do $$
@@ -69,26 +76,36 @@ begin
 end $$;
 \echo '   ✓ forged points_awarded stored as NULL'
 
-\echo '── B. grace OFF: the same kind of pick locks (kickoff passed) ──────────────'
+\echo '── B. once the match has STARTED, picks lock even with match grace ON ──────'
+-- Start the match: kickoff in the past + status live. Match-pick grace stays ON.
 reset role;
-update public.settings set match_picks_grace_until = now() - interval '1 day' where id;
+update public.matches set kickoff = now() - interval '1 hour', status = 'live' where id = :mid;
 select set_config('request.jwt.claims', :'claim', true);
 set local role authenticated;
+-- B1: a NEW market pick on the started match is rejected.
 do $$
 begin
   begin
     insert into public.match_picks (user_id, match_id, market, selection)
       values (auth.uid(), current_setting('app.mid')::bigint, 'over_under', 'over');
-    raise exception 'FAIL B: post-kickoff pick allowed with grace OFF';
-  exception when check_violation then null; -- expected ("kickoff ... has passed")
+    raise exception 'FAIL B1: a new pick on a started match was allowed under grace';
+  exception when check_violation then null; -- expected ("the match has started")
   end;
 end $$;
-\echo '   ✓ post-kickoff pick rejected when grace is OFF'
+-- B2: CHANGING the existing outcome pick on the started match is rejected.
+do $$
+begin
+  begin
+    update public.match_picks set selection = 'away'
+      where user_id = auth.uid() and match_id = current_setting('app.mid')::bigint and market = 'outcome';
+    raise exception 'FAIL B2: changing a pick on a started match was allowed under grace';
+  exception when check_violation then null; -- expected ("the match has started")
+  end;
+end $$;
+\echo '   ✓ started match rejects both new picks and changes, despite grace ON'
 
+\echo '── C. a FINISHED match (past kickoff) is never pickable ────────────────────'
 reset role;
-update public.settings set match_picks_grace_until = now() + interval '1 day' where id;  -- grace back ON
-
-\echo '── C. a FINISHED match (past kickoff) is never pickable, even under grace ──'
 update public.matches set status = 'finished' where id = :mid;
 select set_config('request.jwt.claims', :'claim', true);
 set local role authenticated;
@@ -101,9 +118,9 @@ begin
   exception when check_violation then null; -- expected ("it has finished")
   end;
 end $$;
-\echo '   ✓ finished match rejects new picks under active grace'
+\echo '   ✓ finished match rejects new picks'
 
-\echo '── D. FINISHED + FUTURE kickoff still rejects (audit bug #2 regression) ────'
+\echo '── D. FINISHED + FUTURE kickoff still rejects (0013 audit #2 regression) ───'
 reset role;
 update public.matches set status = 'finished', kickoff = now() + interval '1 day' where id = :mid;
 select set_config('request.jwt.claims', :'claim', true);
@@ -119,16 +136,14 @@ begin
 end $$;
 \echo '   ✓ finished-with-future-kickoff still rejected'
 
-\echo '── G. the three grace windows are independent ─────────────────────────────'
+\echo '── G. long-shot + round-props graces remain independent (match grace inert) '
 reset role;
 update public.settings set match_picks_grace_until = now() - interval '1 day' where id;  -- only match grace off
 do $$
-declare m boolean; r boolean; l boolean;
+declare r boolean; l boolean;
 begin
-  m := public.fb_match_picks_grace_active();
   r := public.fb_round_props_grace_active();
   l := public.fb_longshot_grace_active();
-  assert m = false, 'G: match grace should be inactive';
   assert r = true,  'G: round-props grace must stay active';
   assert l = true,  'G: long-shot grace must stay active';
 end $$;

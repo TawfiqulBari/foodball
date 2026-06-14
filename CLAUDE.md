@@ -21,8 +21,13 @@ it before extending. Brand assets live in `plans/` and `public/branding/` (+ a
 
 What exists now:
 - **Frontend** — Vite + React 18 + TS (strict) + Tailwind in `src/` (screens:
-  Login, Onboarding, Matches, Leaderboard, MyPicks, More, Admin; `lib/` data
-  access; `auth/` provider). Auth is **email + password** (changed from the spec's
+  Login, Onboarding, **Guide** (the first-run landing), Matches, **MatchDay** (the
+  "Stadium" tab), Leaderboard, MyPicks, **RedCards** (voided post-kickoff picks + points
+  cut off), More, Admin; `lib/` data access — `api.ts` is
+  the central Supabase query/RPC module, `database.types.ts` the hand-kept row types,
+  `copy.ts` the single source of the FoodBall copy vocabulary, and `matchField.ts` /
+  `resultMoments.ts` the pure, unit-tested cores behind Match Day and the result
+  overlays; `auth/` provider). Auth is **email + password** (changed from the spec's
   magic-link to avoid an SMTP dependency — see `docs/DEPLOYMENT.md`). No router dep
   — a `useState` tab switch keeps deps within spec §2. **M2 added:** all per-match
   markets (exact-score/BTTS/over-under + the upset ×2), the three round props,
@@ -38,8 +43,10 @@ What exists now:
   Remotion `public/guide.mp4`), the animated **Match Day** stadium (`MatchPitch` +
   `FieldPlayer` + `kits.ts` — accurate home kits for all 48 nations + a Croatia checker
   pattern, plus a **live match clock**), a **commentary feed** (`CommentaryFeed`), the
-  three grace banners, and Admin "Launch tools" (grace windows + signup-domain allowlist
-  + commentary composer + celebration smoke test). Lucide icons; Plus Jakarta Sans + Inter.
+  long-shot + round-props grace banners (the match-pick grace was removed in `0016` — match
+  picks lock at kickoff), and Admin "Launch tools" (the long-shot/round-props grace windows
+  + signup-domain allowlist + commentary composer + celebration smoke test). Lucide icons;
+  Plus Jakarta Sans + Inter.
 - **Database** — `supabase/migrations/` `0001_init.sql` (M1 schema + RLS + pick-lock
   trigger + outcome scoring), `0002_m2_markets_props_decay.sql` (all-market scoring,
   round-prop settlement, tournament decay scoring, revision-window trigger +
@@ -49,11 +56,12 @@ What exists now:
   `0004_sync_results_cron.sql` (pg_cron schedule — Supabase-only), and
   `0005_grants.sql` (the `anon`/`authenticated` table grants PostgREST needs — these
   live only in the harness's `02_grants.sql` otherwise, so a real Supabase deploy
-  needs this migration). **Live-tournament migrations** (`0006`–`0013`):
+  needs this migration). **Live-tournament migrations** (`0006`–`0019`):
   `0006_commentary.sql` (auto kickoff/goal/FT lines + admin-posted lines, realtime),
   `0007_longshot_grace.sql` / `0008_round_props_grace.sql` / `0011_match_picks_grace.sql`
   (three admin-tunable late-launch grace windows on a singleton `public.settings` row;
-  each `fb_*_grace_active()` reads only its own column), `0009_cascade_pick_cleanup.sql`
+  each `fb_*_grace_active()` reads only its own column — but the match-pick one is later
+  made **inert** by `0016`, see below), `0009_cascade_pick_cleanup.sql`
   (let picks cascade-delete when their match is removed), `0010_auto_live_window.sql`
   (token-free pg_cron `foodball-auto-live` flips matches to `live` at kickoff),
   `0012_live_atmosphere.sql` (pg_cron `foodball-live-atmosphere`: brand-voice colour
@@ -66,21 +74,42 @@ What exists now:
   always win; inert where `http` is unavailable), and `0015_signup_domain_allowlist.sql`
   (a BEFORE INSERT trigger on `auth.users` restricts sign-ups to an admin-managed email-
   domain allowlist — `public.signup_allowed_domains`, seeded `infosonik.com`; fail-open
-  when empty; admin RPCs `fb_admin_add_signup_domain`/`fb_admin_remove_signup_domain`).
+  when empty; admin RPCs `fb_admin_add_signup_domain`/`fb_admin_remove_signup_domain`), and
+  **the pick-lock + data migrations** `0016_lock_match_picks_at_kickoff.sql` (per-match
+  picks now lock the instant a match **starts** — kickoff passed **or** status `live` —
+  with **no grace bypass**; the `0011` match-pick grace column/RPC are kept but inert and
+  its admin control was removed; long-shot/round-props graces are untouched) and
+  `0017_seed_players_catalog.sql` (seeds `players_catalog` with notable current players for
+  the 48 live teams, so the Golden Boot / Golden Glove / Best Young Player pickers have
+  options — settlement stays admin-entered), and `0018_red_cards.sql` (a durable
+  `public.red_cards` record of voided picks + the points cut off — read-all/admin-write —
+  powering the **Red Cards** screen; the one-time void itself is
+  `scripts/void-post-kickoff-picks.sql`, with a reversible backup in
+  `docs/voided-picks-backup-2026-06-14.sql`), and `0019_logic_audit_fixes.sql` (the
+  remediation of `docs/logic-audit-2026-06-14.md`: cast-safe scorers + numeric CHECKs,
+  **server-stamped/immutable `tourney_picks.created_at`** with the scorer ranking the active
+  pick by immutable `id` (anti-cheat), RLS that reveals others' tourney/round picks only while
+  locked, self-correcting round completion, `score_events` cleanup triggers on pick delete,
+  a revision window that tolerates empty/finished rounds, `fb_ingest_result` never regressing a
+  finished match, fail-CLOSED signup allowlist + email-change enforcement, and new admin RPCs
+  `fb_admin_remove_tournament_result` / `fb_admin_set_round_complete`).
   `supabase/seed.sql` seeds reference data +
   the §4.3 decay table. **Local Docker mounts the M2/M3 migrations as `01b_m2.sql` /
   `01c_m3.sql` (see compose); the CLI/hosted stack applies all of `supabase/migrations/`.**
   Apply a new migration to the live stack with
   `docker exec -i supabase_db_foodball psql -U postgres -d postgres -f -` and register
   it in `supabase_migrations.schema_migrations`.
-- **Server acceptance tests** — `core_loop_test.sql` (M1),
+- **Server acceptance tests** (all under `supabase/tests/`) — `core_loop_test.sql` (M1),
   `m2_markets_props_decay_test.sql` (M2: markets, props, decay, the revision-window
   crux via RPC *and* raw insert), `m3_autosync_test.sql` (M3: a simulated API
   payload settles end-to-end with no admin action; a manual result is not overwritten),
-  `m_grace_test.sql` (the three grace windows + `0013` lock-hardening: grace ON
-  allows a post-kickoff still-playable pick, grace OFF locks it, a finished match is
-  never pickable incl. the future-kickoff edge, forged `points_awarded` neutralized on
-  INSERT, grace independence), and `m_openfootball_sync_test.sql` (`0014`: a published
+  `m_grace_test.sql` (`0013`/`0016` pick-locking: an OPEN match is pickable, a **started**
+  match — kickoff passed or `live` — rejects both new picks *and* changes **even with
+  match-pick grace ON**, a finished match is never pickable incl. the future-kickoff edge,
+  forged `points_awarded` neutralized on INSERT, long-shot/round-props graces independent),
+  `m_audit_fixes_test.sql` (`0019`: created_at anti-cheat is immutable, total_goals is
+  numeric/bounded, deleting a pick cleans its `score_events`, the scorer's numeric cast is
+  griefing-safe), and `m_openfootball_sync_test.sql` (`0014`: a published
   openfootball score self-settles + scores a match with no admin action; a manual result
   is never overwritten). **Run after any change to the schema or scoring.**
   *Caveat:* `core_loop`/`m2`/`m3` need `SEED-*` fixtures that exist only in the Docker
@@ -89,7 +118,10 @@ What exists now:
   with `psql -f`.
 - **Decay math (mandatory Vitest)** — `src/lib/decay.ts` + `decay.test.ts` verify
   every cell of spec §4.3; `src/lib/scoring.ts` holds the fixed market/prop point
-  values The Menu renders (mirrors the SQL scorer).
+  values The Menu renders (mirrors the SQL scorer). `npm test` (`vitest run`) actually
+  runs **four** suites: `decay.test.ts` (§4.3), `format.test.ts` (display timing),
+  `matchField.test.ts` (Match Day side-assignment/kits/tabs/round-completion), and
+  `resultMoments.test.ts` (M4 overlay moment classification + priority ordering).
 - **Hardened Docker run** — `Dockerfile` + `docker-compose.yml` + `docker/`.
   `docker/db-init/` is a *local-only* shim that lets the identical migrations run
   on stock Postgres (Supabase provides `auth`/`auth.uid()`/roles natively).
@@ -97,20 +129,25 @@ What exists now:
   and `sync-results/` (M3: polls live scores/results → `fb_ingest_result`; admin-JWT
   or `SYNC_SECRET`-gated; football-data.org→openfootball fallback, Zod-validated).
 - **Recap (M5)** — `recap/` is a **separate** Remotion package (own `package.json`,
-  not part of the web-app runtime). `npm run render -- --round=MD2` pulls the
-  leaderboard via the service key (demo-data fallback offline) → `recap/out/recap-<round>.mp4`
-  (9:16, ~35s: headline → top-3 podium w/ avatars → climber/faller → outro).
+  not part of the web-app runtime). `npm run render -- --round=MD2` (`recap/render.mjs`)
+  pulls the leaderboard via the service key (demo-data fallback offline) →
+  `recap/out/recap-<round>.mp4` (9:16, ~35s: headline → top-3 podium w/ avatars →
+  climber/faller → outro). A second renderer, `npm run render:guide` (`recap/render-guide.mjs`),
+  produces the in-app how-to-play `public/guide.mp4` + poster.
 - Security control mapping in `docs/SECURITY.md`; how-to-run in `docs/RUNNING.md`.
 
 Live-ops state (June 2026): the league runs the **real WC2026** group stage —
 matches go live at kickoff (`foodball-auto-live`) and **self-settle from openfootball**
 (`foodball-openfootball-sync`, `0014`), both token-free; **admin entry is the instant,
 authoritative override** (always wins). Sign-ups are gated to an email-domain allowlist
-(`0015`). Genuinely remaining: (1) **knockout fixtures** (the importer does the 72 group
-games; knockouts are placeholders until teams are decided, and need ET/penalty winner
-logic — admin-entered for now); (2) a **squads sync** to populate `players_catalog`
-(until then Clean Plate / Top Chef / Golden Boot pickers stay empty, and Top Chef /
-awards settle from admin-entered data); (3) optionally a `football-data.org` token for
+(`0015`). **Match picks lock strictly at kickoff** — no late-launch grace for matches
+(`0016`); a started or live match is never pickable. Genuinely remaining: (1) **knockout
+fixtures** (`scripts/import-real-fixtures.mjs` did the 72 group games; knockouts are
+placeholders until teams are decided, and need ET/penalty winner logic — admin-entered for
+now); (2) a full **squads sync** for `players_catalog` — `0017` seeds a curated set of
+notable current players per team so the Golden Boot / Golden Glove / Best Young Player
+pickers work, but Clean Plate (per-round top scorers) and award **settlement** are still
+admin-entered; (3) optionally a `football-data.org` token for
 faster/live scores (spec §10 — free tier may not cover WC2026, so openfootball + manual
 stay the fallback). Tournament settlement (champion/finalists/awards) is admin-entered by
 design. Optional polish: `lottie-react` is uninstalled — M4's celebrations use
@@ -128,7 +165,7 @@ This is the **approved dependency allow-list**; don't add anything outside it wi
 - **Animation:** `framer-motion` (UI/avatars/result overlays) *(installed, M4)*; `lottie-react` (celebrations; bundle JSON locally in `src/assets/lottie/`) *(planned/optional — not installed; M4 uses framer-motion + mascot + emoji confetti instead)*.
 - **Avatars:** DiceBear (`@dicebear/core` + `@dicebear/collection`), client-side SVG seeded from display name, no external image requests *(installed, M2)*.
 - **Backend:** Supabase free tier — Postgres, Auth (**email + password**, not magic-link — see "Current state" above), Realtime, Edge Functions, `pg_cron`.
-- **Installed today:** runtime `@supabase/supabase-js`, `react`, `react-dom`, `zod`, `@dicebear/core`, `@dicebear/collection`, `framer-motion`; tooling Vite + `@vitejs/plugin-react`, Tailwind, `vitest`, `tsx`, `vite-plugin-pwa` (+ pinned `workbox-build@7.1.0` — 7.3+ breaks the plugin's ESM `require`). See `package.json`.
+- **Installed today:** runtime `@supabase/supabase-js`, `react`, `react-dom`, `zod`, `@dicebear/core`, `@dicebear/collection`, `framer-motion`, `lucide-react` (icons); tooling Vite + `@vitejs/plugin-react`, Tailwind, `vitest`, `tsx`, `vite-plugin-pwa` (+ `workbox-build`/`workbox-window` kept on **7.1.x** — declared `^7.1.0`, and 7.3+ breaks the plugin's ESM `require`). See `package.json`.
 - **Hosting:** Vercel/Netlify (frontend) + Supabase (everything else).
 - **Results data:** football-data.org API (`WC`, 10 calls/min) primary → openfootball `worldcup.json` fallback → manual admin entry (must always work).
 - **Recap (M5, optional):** Remotion in a **separate `/recap` package**, not part of the web app runtime.
@@ -153,9 +190,10 @@ The big picture that spans many files:
 
 - `npm install` then `npm run dev` — Vite dev server (needs `.env.local`; see `.env.example`).
 - `npm run build` — typecheck (`tsc --noEmit`, strict) **then** `vite build`. `npm run lint` is the typecheck alone.
-- `npm test` — Vitest (`npx vitest run <path>` or `-t "<name>"` for one): `decay.test.ts`
-  (mandatory, spec §4.3) + `format.test.ts`. Authoritative scoring/locking is tested at the
-  **SQL** tier (see below), never in Vitest.
+- `npm test` — Vitest (`npx vitest run <path>` or `-t "<name>"` for one). Four suites:
+  `decay.test.ts` (mandatory, spec §4.3), `format.test.ts` (display timing),
+  `matchField.test.ts` (Match Day logic), `resultMoments.test.ts` (M4 overlay moments).
+  Authoritative scoring/locking is tested at the **SQL** tier (see below), never in Vitest.
 - `npm run seed:demo` — seed 8 fake users on a *real* Supabase project (needs
   `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`). Local Docker is seeded by `supabase/seed.sql`.
 - **Run it (hardened Docker):** `docker compose -p foodball up -d --build` → app on
@@ -176,22 +214,27 @@ The big picture that spans many files:
 
 **Extending the schema/functions** (M2→M5): add a **new** numbered migration under
 `supabase/migrations/` — never edit `0001_init.sql` in place (`supabase migration new <name>`).
-Edge Functions live in `supabase/functions/<name>/` (`supabase functions deploy <name>`; only
-`sync-fixtures` exists today). Re-run the SQL acceptance test after any migration.
+Edge Functions live in `supabase/functions/<name>/` (`supabase functions deploy <name>`;
+`sync-fixtures` and `sync-results` exist today). Re-run the SQL acceptance test after any
+migration. The real WC2026 fixtures were imported by `scripts/import-real-fixtures.mjs`
+(`node scripts/import-real-fixtures.mjs > /tmp/f.sql` → pipe into the live DB); that script
+is also where you'd extend the knockout bracket. `scripts/demo-matches.sql` is the demo set.
 
 ## Gotchas worth knowing
 
 - `LANGUAGE sql` functions (e.g. `fb_is_admin`) validate their body at creation —
   define them **after** the tables they reference (plpgsql defers, sql does not).
 - The pick-lock trigger intentionally allows the scorer's `points_awarded` write
-  (selection/market unchanged); it blocks only pick-content changes after kickoff.
+  (selection/market unchanged); it blocks pick-content changes once the match **starts**
+  — kickoff passed **or** status `live` — with no grace bypass (`0016`).
 - First-admin bootstrap: `fb_protect_profile` lets only trusted roles
   (`service_role`/`postgres`/superuser) set `is_admin`; `authenticated` users can't
   self-escalate. Don't make that trigger `SECURITY DEFINER` or `current_user` breaks.
 - The local Docker DB uses `--auth-local=scram-sha-256`, so `psql` needs the
   password: `PGPASSWORD=$(cat /run/secrets/db_password) psql -U foodball -d foodball`.
-- `<FoodBallMascot>` is fully implemented but still **has zero imports** — staged for the
-  M4 result overlays. Reuse it there; don't recreate it.
+- `<FoodBallMascot mood=...>` is the single mascot component, reused (not recreated) by the
+  M4 result overlays — imported and rendered in `src/components/ResultOverlay.tsx`. Swap
+  eyes/extras per mood (`happy|sad|spicy`); respect `prefers-reduced-motion`.
 - **Tournament-pick anti-cheat** (M2): a client could otherwise forge a higher-value decay
   bucket or insert many "active" picks to guarantee a win. Two defenses: the
   `fb_enforce_tourney_pick` trigger *overwrites* `set_after_round` with the server-computed
@@ -201,17 +244,18 @@ Edge Functions live in `supabase/functions/<name>/` (`supabase functions deploy 
 - **`set_after_round` is a bucket, not a raw round.** The §4.3 "After MD1–MD3" column is one
   value, so group-stage picks store `'MD3'`; `fb_decay_bucket` / `decayBucket()` collapse
   MD1/MD2/MD3→`'MD3'` and `'F'`→`'SF'`. Keep `seed.sql`, `decay.ts`, and the SQL helpers in lockstep.
-- **`vite-plugin-pwa` needs `workbox-build` pinned to `7.1.0`** — 7.3+ throws "Dynamic require
-  of workbox-build is not supported" during `vite build` in this ESM project.
+- **Keep `workbox-build` on 7.1.x** (declared `^7.1.0`; the lockfile holds the working
+  build — if you bump it, stay below 7.3) — 7.3+ throws "Dynamic require of workbox-build
+  is not supported" during `vite build` in this ESM project.
 
 ## Non-negotiable conventions (easy to get wrong, will break the product)
 
 - **Never "correct" the name FoodBall to Football** anywhere — repo, code, UI, docs. The food+football pun is the entire brand. Mascot = burger-football hybrid; tagline "Predict. Feast. Repeat."; motto "Champion eats free."
 - **This is NOT gambling.** No money, wallets, currency, odds, or payouts. Use "predict / pick / points" — never "bet / stake / odds".
 - **$0 infrastructure** — free tiers only. Ask before adding any paid service.
-- **Use the FoodBall copy vocabulary consistently** (spec §8): Leaderboard→**The Food Chain**, exact-score hit→**Full Course**, correct outcome→**Chef's Kiss**, wrong pick→**Burnt Toast**, missed pick→**Skipped Lunch**, last place→**The Leftovers zone**. The round props are **Top Chef** / **Clean Plate** / **Spice of the Round**.
+- **Use the FoodBall copy vocabulary consistently** (spec §8): Leaderboard→**The Food Chain**, exact-score hit→**Full Course**, correct outcome→**Chef's Kiss**, wrong pick→**Burnt Toast**, missed pick→**Skipped Lunch**, last place→**The Leftovers zone**. The round props are **Top Chef** / **Clean Plate** / **Spice of the Round**. These strings live in one place — the `COPY` const in **`src/lib/copy.ts`** (imported across the app); import from there, don't hand-type or add a second copy.
 - **The rules page ("The Menu", `src/screens/More.tsx`) reads its values from the scoring tables, never a hand-typed copy** so it can't drift. The decay grid is rendered live from `decay_schedule`; the fixed per-match/per-round point values come from `src/lib/scoring.ts` (the single TS mirror of the SQL scorer). If you change a point value, change it in `scoring.ts` *and* the SQL — don't add a third copy in the page.
 - **Reuse the mascot as one component** `<FoodBallMascot mood="happy|sad|spicy" />`, swapping eyes/extras per mood. Respect `prefers-reduced-motion` for all result-overlay animations.
-- Display font **Luckiest Guy** (headings/points/celebrations); body Nunito or system sans. Palette and tokens in spec §8. Flag emoji for teams — no flag image assets.
+- Type: the web app loads **Plus Jakarta Sans** (headings, `font-display`) + **Inter** (body, `font-body`) in `index.html`, mapped in `tailwind.config.ts`. (The spec's Luckiest Guy/Nunito survive only in the separate `recap/` Remotion package, not the app.) Palette and tokens in spec §8. Flag emoji for teams — no flag image assets.
 - Secrets: frontend `.env.local` holds **only** the Supabase anon key + URL; the football-data.org token and service key are Supabase secrets, never in the frontend. Provide `.env.example`.
 - If football-data.org's free tier turns out not to include WC 2026 data on first call, **say so immediately** and fall back to openfootball + manual entry rather than silently degrading.

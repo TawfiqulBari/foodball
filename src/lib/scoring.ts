@@ -6,7 +6,7 @@
 
 export const MARKET_POINTS = {
   outcome: 10,
-  exact_score: 25, // bonus on top of the outcome points
+  exact_score: 25, // its own market, scored independently of the outcome pick
   btts: 5,
   over_under: 5,
 } as const

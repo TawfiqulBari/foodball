@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase'
 import { roundComplete } from '../lib/matchField'
 import {
   fetchMatches,
-  fetchMatchPicksGrace,
   fetchMyPicks,
   fetchMyRoundProps,
   fetchPlayers,
@@ -39,7 +38,6 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
   const [picks, setPicks] = useState<Map<string, MatchPick>>(new Map())
   const [props, setProps] = useState<Map<Prop, RoundProp>>(new Map())
   const [propsGraceUntil, setPropsGraceUntil] = useState<string | null>(null)
-  const [matchGraceUntil, setMatchGraceUntil] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
@@ -49,14 +47,12 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
       fetchTeams(),
       fetchPlayers(),
       fetchRoundPropsGrace(),
-      fetchMatchPicksGrace(),
     ])
-      .then(([r, t, p, propsGrace, matchGrace]) => {
+      .then(([r, t, p, propsGrace]) => {
         setRounds(r)
         setTeams(t)
         setPlayers(p)
         setPropsGraceUntil(propsGrace)
-        setMatchGraceUntil(matchGrace)
         if (r.length && !r.some((x) => x.key === activeRound)) setActiveRound(r[0]!.key)
       })
       .catch((e) => setErr(String(e)))
@@ -66,10 +62,6 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
   const propsGraceActive = useMemo(
     () => (propsGraceUntil ? new Date(propsGraceUntil) > new Date() : false),
     [propsGraceUntil],
-  )
-  const matchGraceActive = useMemo(
-    () => (matchGraceUntil ? new Date(matchGraceUntil) > new Date() : false),
-    [matchGraceUntil],
   )
 
   useEffect(() => {
@@ -81,13 +73,18 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
       .finally(() => alive && setLoading(false))
 
     // Live scores (spec §7.3): refetch this round's matches when any match row
-    // changes. Hosted Supabase publishes `matches` in M3; no-op locally.
+    // changes. Also re-pull our picks so optimistic rows (id:-1, points_awarded:null)
+    // reconcile with the server once a match settles. Hosted Supabase publishes
+    // `matches` in M3; no-op locally.
     const channel = supabase
       .channel(`matches-${activeRound}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'matches', filter: `round_key=eq.${activeRound}` },
-        () => void loadMatches(),
+        () => {
+          void loadMatches()
+          void fetchMyPicks().then((p) => alive && setPicks(p))
+        },
       )
       .subscribe()
     return () => {
@@ -185,7 +182,6 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
                   teams={teams}
                   picks={picksFor(m.id)}
                   onPick={(mk, sel) => onPick(m.id, mk, sel)}
-                  graceActive={matchGraceActive}
                 />
               ))}
             </div>

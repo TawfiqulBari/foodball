@@ -123,10 +123,26 @@ export interface LeaderboardRow {
   rank_delta: number
 }
 
+export interface RedCard {
+  id: number
+  user_id: string
+  match_id: number | null
+  match_label: string
+  market: string
+  selection: string
+  points_deducted: number
+  kickoff: string | null
+  picked_at: string | null
+  minutes_after_kickoff: number | null
+  reason: string
+  created_at: string
+}
+
 // Minimal shape the supabase-js generic expects.
 export interface Database {
   public: {
     Tables: {
+      red_cards: { Row: RedCard; Insert: Partial<RedCard>; Update: Partial<RedCard> }
       profiles: { Row: Profile; Insert: Partial<Profile> & { id: string; display_name: string }; Update: Partial<Profile> }
       teams: { Row: Team; Insert: Partial<Team>; Update: Partial<Team> }
       rounds: { Row: RoundRow; Insert: Partial<RoundRow>; Update: Partial<RoundRow> }
