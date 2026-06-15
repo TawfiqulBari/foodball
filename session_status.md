@@ -1,6 +1,6 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-06-14 (fairness fixes + logic audit) · branch `live-fixes-2026-06-14`_
+_Last updated: 2026-06-15 (fairness fixes, logic audit, Food Chain expand) · branch `main`_
 
 ## TL;DR
 
@@ -12,6 +12,8 @@ live clock, signup allowlist). **This session (2026-06-14)** hardened fairness m
 match picks now **lock strictly at kickoff** (`0016`), the **award pickers are populated**
 (`0017`, 239 players), **post-kickoff picks were voided + scores recomputed** with a new
 **Red Cards** screen (`0018`), and a **26-finding logic audit** was remediated (`0019`).
+It also added a **Food Chain expand** (tap a chef → their per-match predictions, pick→team
+mapping pinned in one unit-tested helper). All merged to `main` and deployed.
 Authoritative scoring/locking still lives in Postgres; the client never computes points.
 
 ## Live deployment
@@ -93,8 +95,18 @@ Foundation (earlier in the build):
   `sync-results` Edge Function resolves real `api_match_id`s + routes openfootball through the
   in-DB settler. New admin RPCs `fb_admin_remove_tournament_result` / `fb_admin_set_round_complete`.
   Two not changed (by design): single-finalist scoring, and stuck-live (admin override).
-- **Deployed**: rebuilt + swapped the `foodball-web` container (new bundle live, HTTP 200);
-  DB migrations `0016`–`0019` applied to the live stack. Branch `live-fixes-2026-06-14` pushed.
+- **Food Chain expand + pick→team mapping** (`1fe2aca`, on `main`): every leaderboard row
+  now expands to show that chef's per-match predictions — the **outcome rendered as the
+  team they backed**, side markets as chips, points once finished; others' picks stay
+  RLS-hidden until kickoff (no copying). Triggered by a "stadium says Sweden, table says
+  Tunisia" report — investigation proved the **data was correct** (Emon's SWE-TUN pick is
+  stored `home`=SWE, scored +10; all 72 matches internally consistent), so this was a
+  display-consistency fix: a single unit-tested `pickLabel()` (`matchField.ts`, pins the
+  SWE/TUN case) is now the only place a pick→team mapping lives, and Red Cards shows the
+  team too (not raw "home"/"away"). No data amendments were needed.
+- **Deployed (twice)**: rebuilt + swapped the `foodball-web` container for the migrations
+  work and again for the Food Chain expand (both live, HTTP 200); DB migrations `0016`–`0019`
+  applied to the live stack. Everything merged + pushed to **`main`**.
 
 To make yourself admin after signing up:
 ```bash
@@ -133,8 +145,9 @@ Caveats for the public surface:
 
 - `npm run lint` (`tsc --noEmit`, strict, no `any`) passes; production `web` image
   builds and is deployed.
-- `npx vitest run` — **76 Vitest** across `decay.test.ts`, `resultMoments.test.ts`,
-  `matchField.test.ts`, `format.test.ts`.
+- `npx vitest run` — **78 Vitest** across `decay.test.ts`, `resultMoments.test.ts`,
+  `matchField.test.ts` (incl. `pickLabel` pinning home→home team, the SWE/TUN case),
+  `format.test.ts`.
 - **`supabase/tests/m_audit_fixes_test.sql`** (new, `0019`) — runs green on the live stack:
   `created_at` is immutable to an untrusted role (anti-cheat), `total_goals` is numeric/bounded,
   deleting a pick cleans its `score_events`, and the scorer's numeric cast is griefing-safe.

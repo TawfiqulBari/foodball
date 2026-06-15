@@ -29,16 +29,19 @@ What exists now:
   "Stadium" tab), Leaderboard, MyPicks, **RedCards** (voided post-kickoff picks + points
   cut off), More, Admin; `lib/` data access — `api.ts` is
   the central Supabase query/RPC module, `database.types.ts` the hand-kept row types,
-  `copy.ts` the single source of the FoodBall copy vocabulary, and `matchField.ts` /
-  `resultMoments.ts` the pure, unit-tested cores behind Match Day and the result
-  overlays; `auth/` provider). Auth is **email + password** (changed from the spec's
+  `copy.ts` the single source of the FoodBall copy vocabulary, and `matchField.ts`
+  (Match Day side-assignment + **`pickLabel`**, the single source for rendering a pick as
+  the team it backed) / `resultMoments.ts` the pure, unit-tested cores behind Match Day
+  and the result overlays; `auth/` provider). Auth is **email + password** (changed from the spec's
   magic-link to avoid an SMTP dependency — see `docs/DEPLOYMENT.md`). No router dep
   — a `useState` tab switch keeps deps within spec §2. **M2 added:** all per-match
   markets (exact-score/BTTS/over-under + the upset ×2), the three round props,
   tournament-long picks with decay + revision window + history, the DiceBear avatar
   builder/onboarding + avatars on the leaderboard, an installable **PWA**, and a
   "The Menu" rules page generated from the scoring tables. **M3 added:** a live
-  Realtime leaderboard + live-score display + rank-change arrows (`rank_delta`).
+  Realtime leaderboard + live-score display + rank-change arrows (`rank_delta`); the
+  leaderboard rows **expand** to show that chef's per-match predictions (outcome rendered
+  as the backed team via `pickLabel`; others' picks RLS-hidden until kickoff).
   **M4 added:** result-moment overlays (`<ResultOverlay>`/`<ResultMoments>` — the
   reused `<FoodBallMascot>` + framer-motion + food-confetti, queued one-at-a-time,
   reduced-motion aware), podium/row layout animation, and rivals pinning. **Live
@@ -259,6 +262,7 @@ is also where you'd extend the knockout bracket. `scripts/demo-matches.sql` is t
 - **$0 infrastructure** — free tiers only. Ask before adding any paid service.
 - **Use the FoodBall copy vocabulary consistently** (spec §8): Leaderboard→**The Food Chain**, exact-score hit→**Full Course**, correct outcome→**Chef's Kiss**, wrong pick→**Burnt Toast**, missed pick→**Skipped Lunch**, last place→**The Leftovers zone**. The round props are **Top Chef** / **Clean Plate** / **Spice of the Round**. These strings live in one place — the `COPY` const in **`src/lib/copy.ts`** (imported across the app); import from there, don't hand-type or add a second copy.
 - **The rules page ("The Menu", `src/screens/More.tsx`) reads its values from the scoring tables, never a hand-typed copy** so it can't drift. The decay grid is rendered live from `decay_schedule`; the fixed per-match/per-round point values come from `src/lib/scoring.ts` (the single TS mirror of the SQL scorer). If you change a point value, change it in `scoring.ts` *and* the SQL — don't add a third copy in the page.
+- **Render a pick as a team through one helper, never inline.** An outcome `selection` is `home`/`away`/`draw`; mapping it to a team (home→`home_team`, away→`away_team`) lives only in **`pickLabel`** (`src/lib/matchField.ts`, unit-tested incl. the SWE/TUN case). Use it anywhere a pick is shown as text (Food Chain expand, etc.) so no screen can invert home/away vs the pitch/scorer. The data stores `home`/`away` consistently — never "fix" a pick by flipping the team; fix the display.
 - **Reuse the mascot as one component** `<FoodBallMascot mood="happy|sad|spicy" />`, swapping eyes/extras per mood. Respect `prefers-reduced-motion` for all result-overlay animations.
 - Type: the web app loads **Plus Jakarta Sans** (headings, `font-display`) + **Inter** (body, `font-body`) in `index.html`, mapped in `tailwind.config.ts`. (The spec's Luckiest Guy/Nunito survive only in the separate `recap/` Remotion package, not the app.) Palette and tokens in spec §8. Flag emoji for teams — no flag image assets.
 - Secrets: frontend `.env.local` holds **only** the Supabase anon key + URL; the football-data.org token and service key are Supabase secrets, never in the frontend. Provide `.env.example`.

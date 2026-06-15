@@ -26,12 +26,15 @@ Chain**, and the winner eats free. ~6 weeks of fun, then archive.
   and revisable tournament long-shots whose value **decays** the later you set them.
 - **Server-authoritative scoring & pick-locking** — all in Postgres; the client never
   computes points, and the DB rejects a pick after kickoff even if the UI is bypassed.
-- **Live everything** — a Realtime leaderboard with rank-change arrows, live scores,
-  result-moment celebration overlays, an animated **Match Day** stadium (avatars in
-  team kits on their picked side, cheering/crying on goals) with a live match clock,
+- **Live everything** — a Realtime leaderboard (**The Food Chain**) with rank-change
+  arrows where you can **tap any chef to expand their per-match predictions** (the team
+  they backed, side markets, points — others' picks stay hidden until kickoff), live
+  scores, result-moment celebration overlays, an animated **Match Day** stadium (avatars
+  in team kits on their picked side, cheering/crying on goals) with a live match clock,
   and a live commentary feed. Token-free **auto-live** (matches go live at kickoff) +
   **auto-settle** (finished matches settle themselves from openfootball), with admin
-  entry as the instant, authoritative override.
+  entry as the instant, authoritative override. Match picks **lock strictly at kickoff**;
+  any prediction set after a match started is voided and shown on a **Red Cards** page.
 - **The fun layer** — DiceBear avatars, an installable PWA, a first-run "How to play"
   guide (+ a Remotion animated guide), and an optional Remotion **recap** video.
 - **$0 infra** — Vite + React 18 + TypeScript (strict) + Tailwind on the front; Supabase
