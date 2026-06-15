@@ -3,12 +3,13 @@ import {
   assignSides,
   jerseyColor,
   matchDayTabs,
+  pickLabel,
   roundComplete,
   scoredSide,
   sideForSelection,
   type Picker,
 } from './matchField'
-import type { MatchRow } from './database.types'
+import type { MatchRow, Team } from './database.types'
 
 const picker = (id: string): Picker => ({ user_id: id, display_name: id, avatar_config: {} })
 const match = (id: number, kickoff: string, status: MatchRow['status'], hs = 0, as_ = 0): MatchRow => ({
@@ -23,6 +24,25 @@ describe('sideForSelection', () => {
     expect(sideForSelection('home')).toBe('home')
     expect(sideForSelection('away')).toBe('away')
     expect(sideForSelection('draw')).toBe('draw')
+  })
+})
+
+describe('pickLabel', () => {
+  // The exact SWE(home) v TUN(away) case: a 'home' pick must read "Sweden", never "Tunisia".
+  const teams = new Map<number, Team>([
+    [1, { id: 1, name: 'Sweden', fifa_code: 'SWE', fifa_rank: 0, group_letter: 'F', flag_emoji: '🇸🇪' }],
+    [2, { id: 2, name: 'Tunisia', fifa_code: 'TUN', fifa_rank: 0, group_letter: 'F', flag_emoji: '🇹🇳' }],
+  ])
+  const m = { home_team: 1, away_team: 2 }
+  it('maps an outcome pick to the correct team (home→home, away→away), never inverted', () => {
+    expect(pickLabel('outcome', 'home', m, teams)).toBe('Sweden')
+    expect(pickLabel('outcome', 'away', m, teams)).toBe('Tunisia')
+    expect(pickLabel('outcome', 'draw', m, teams)).toBe('Draw')
+  })
+  it('labels the side markets from their literal value', () => {
+    expect(pickLabel('exact_score', '5-1', m, teams)).toBe('Exact 5-1')
+    expect(pickLabel('btts', 'yes', m, teams)).toBe('BTTS Yes')
+    expect(pickLabel('over_under', 'under', m, teams)).toBe('Under 2.5')
   })
 })
 

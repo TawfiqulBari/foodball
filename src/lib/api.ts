@@ -73,6 +73,15 @@ export async function submitOutcomePick(
   return submitMatchPick(userId, matchId, 'outcome', selection)
 }
 
+/** A given user's match picks (all markets). RLS reveals another user's pick only
+ *  after that match's kickoff, so expanding a rival on The Food Chain can never leak
+ *  a not-yet-locked pick. Your own picks are always returned. */
+export async function fetchMatchPicksForUser(userId: string): Promise<MatchPick[]> {
+  const { data, error } = await supabase.from('match_picks').select('*').eq('user_id', userId)
+  if (error) throw error
+  return data ?? []
+}
+
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
   const { data, error } = await supabase.from('leaderboard').select('*').order('rank')
   if (error) throw error

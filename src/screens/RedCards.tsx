@@ -11,6 +11,20 @@ const MARKET_LABEL: Record<string, string> = {
 }
 const marketLabel = (m: string) => MARKET_LABEL[m] ?? m
 
+/** Resolve a voided pick to what it backed. For an outcome pick, map home/away to
+ *  the actual team from `match_label` ("HOME v AWAY") — never the raw "home"/"away". */
+function cardSelectionLabel(c: RedCard): string {
+  if (c.market === 'outcome') {
+    const [home, away] = c.match_label.split(' v ')
+    if (c.selection === 'home') return home ?? 'Home'
+    if (c.selection === 'away') return away ?? 'Away'
+    return 'Draw'
+  }
+  if (c.market === 'btts') return c.selection === 'yes' ? 'Yes' : 'No'
+  if (c.market === 'over_under') return c.selection === 'over' ? 'Over 2.5' : 'Under 2.5'
+  return c.selection
+}
+
 type Group = { userId: string; pointsCut: number; cards: RedCard[] }
 
 export function RedCards() {
@@ -110,7 +124,7 @@ export function RedCards() {
                             <span className="min-w-0 flex-1">
                               <span className="font-semibold">{c.match_label}</span>{' '}
                               <span className="text-muted-foreground">
-                                · {marketLabel(c.market)}: {c.selection}
+                                · {marketLabel(c.market)}: {cardSelectionLabel(c)}
                               </span>
                               {c.minutes_after_kickoff != null && (
                                 <span className="ml-1 text-xs text-muted-foreground">

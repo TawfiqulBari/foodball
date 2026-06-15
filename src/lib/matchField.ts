@@ -3,9 +3,30 @@
 // finished the round (→ redirect to the pitch), and which side just scored (→ the
 // cheer/cry animation). The screen/components consume these; keeping them pure
 // makes the behaviour testable without rendering.
-import type { MatchRow } from './database.types'
+import type { MatchRow, Team } from './database.types'
 
 export type Side = 'home' | 'away' | 'draw'
+
+/** The SINGLE source of truth for showing what a pick backed. An outcome
+ *  selection maps home→the home team and away→the away team — never inverted.
+ *  Side markets show their literal value. Use this everywhere a pick is rendered
+ *  as text so no screen can disagree with the pitch or the scorer. */
+export function pickLabel(
+  market: string,
+  selection: string,
+  match: Pick<MatchRow, 'home_team' | 'away_team'>,
+  teams: Map<number, Team>,
+): string {
+  if (market === 'outcome') {
+    if (selection === 'home') return teams.get(match.home_team)?.name ?? 'Home'
+    if (selection === 'away') return teams.get(match.away_team)?.name ?? 'Away'
+    return 'Draw'
+  }
+  if (market === 'exact_score') return `Exact ${selection}`
+  if (market === 'btts') return `BTTS ${selection === 'yes' ? 'Yes' : 'No'}`
+  if (market === 'over_under') return selection === 'over' ? 'Over 2.5' : 'Under 2.5'
+  return selection
+}
 
 export interface Picker {
   user_id: string
