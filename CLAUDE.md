@@ -186,7 +186,7 @@ The big picture that spans many files:
 - **The "round" concept (MD1, MD2, MD3, R32, R16, QF, SF, F) drives lock and revision windows.** Only the round *keys* are hardcoded; all dates/fixtures are seeded from the API at setup time, not hardcoded. A round completes when all its matches have final results, which settles round props and opens the tournament-pick revision window.
 - **Three prediction tiers** (spec §4): per-match markets (lock at kickoff), per-round props (lock at round's first kickoff), and revisable tournament-long picks whose point value **decays** based on when the currently-held pick was last set. Decay values live in a `decay_schedule` DB table so the admin can tune them without code changes — read points from there, don't hardcode.
 - **Results sync pipeline** (spec §6). *Built:* `sync-fixtures` (daily upsert, idempotent by `api_match_id`) and `sync-results` (polls scores → the `fb_ingest_result` RPC, which auto-scores a match the instant it flips to `finished` — no admin action — and cascades into round-prop settlement via `fb_score_match`/`fb_score_round`). Admin manual entry via `fb_admin_set_result`; tournament-long picks settle via `fb_admin_set_tournament_result`. **Manual always wins over API** — `fb_ingest_result` skips a match whose `result_source='manual'` and `status='finished'`. *Live, token-free:* on the self-hosted stack two pg_cron jobs run the loop with no API token — `foodball-auto-live` (`0010`) flips a match to `live` at its real kickoff, and `foodball-openfootball-sync` (`0014`) settles finished group matches from openfootball via `fb_ingest_result`. The `sync-results` Edge Function + its `foodball-sync-results` cron remain the path for a `football-data.org` token (and on hosted Supabase, where the in-DB `http` extension isn't available).
-- **RLS visibility rule:** everyone can read everything *after* lock time (it's a social game), but a pick is visible only to its owner *before* its lock time (prevents copying). Inserts/updates are own-rows-only and only before lock; `is_admin` bypasses.
+- **RLS visibility rule:** everyone can read everything *after* lock time (it's a social game), but a pick is visible only to its owner *before* its lock time (prevents copying). Inserts/updates are own-rows-only and only before lock; `is_admin` bypasses. **Consequence for the client:** because RLS returns *all* players' picks after lock, any "my picks" read MUST filter `.eq('user_id', <me>)` itself — never rely on RLS to scope it. `fetchMyPicks`/`fetchMyRoundProps`/`fetchMyTourneyPicks` (in `api.ts`) all do; the Stadium (`fetchOutcomePickers`) and the Food Chain expand (`fetchMatchPicksForUser`) are intentionally cross-user. (This was a real bug: an unscoped read keyed into a `Map` showed a random rival's pick as "yours" once a match started — see the gotcha below.)
 
 ## Validation & testing
 
@@ -234,6 +234,12 @@ is also where you'd extend the knockout bracket. `scripts/demo-matches.sql` is t
 - The pick-lock trigger intentionally allows the scorer's `points_awarded` write
   (selection/market unchanged); it blocks pick-content changes once the match **starts**
   — kickoff passed **or** status `live` — with no grace bypass (`0016`).
+- **A "my picks" read must filter `user_id` explicitly — RLS does NOT scope it to you
+  after lock.** Post-kickoff, `select('*')` on `match_picks`/`round_props`/`tourney_picks`
+  returns *every* player's rows; if you key those into a `Map` by `match_id:market` (etc.)
+  the rows collide and you render a rival's pick as the viewer's own (it looks fine for
+  scheduled matches, where RLS still hides others). Always `.eq('user_id', <session user>)`
+  in the `fetchMy*` helpers. The data/scorer are unaffected — this is a client-read trap.
 - First-admin bootstrap: `fb_protect_profile` lets only trusted roles
   (`service_role`/`postgres`/superuser) set `is_admin`; `authenticated` users can't
   self-escalate. Don't make that trigger `SECURITY DEFINER` or `current_user` breaks.

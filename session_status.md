@@ -104,9 +104,17 @@ Foundation (earlier in the build):
   display-consistency fix: a single unit-tested `pickLabel()` (`matchField.ts`, pins the
   SWE/TUN case) is now the only place a pick→team mapping lives, and Red Cards shows the
   team too (not raw "home"/"away"). No data amendments were needed.
-- **Deployed (twice)**: rebuilt + swapped the `foodball-web` container for the migrations
-  work and again for the Food Chain expand (both live, HTTP 200); DB migrations `0016`–`0019`
-  applied to the live stack. Everything merged + pushed to **`main`**.
+- **"My picks" RLS-scoping fix** (`954c5d2`, on `main`): `fetchMyPicks` /
+  `fetchMyRoundProps` / `fetchMyTourneyPicks` selected without a `user_id` filter, trusting
+  RLS to scope them. But RLS reveals *everyone's* picks after lock (for the Stadium), so a
+  started/finished match returned all players' rows and the client `Map` (keyed
+  `match_id:market` etc.) collided — the Matches/Picks screens showed a **random rival's
+  pick as yours** (scheduled matches looked fine, masking it). Found via Emon's screenshots
+  (Stadium showed Sweden, Matches showed Tunisia). Fix: every `fetchMy*` now
+  `.eq('user_id', <session user>)`. Data + scoring were always correct — no amendments.
+- **Deployed (3×)**: rebuilt + swapped the `foodball-web` container for the migrations work,
+  the Food Chain expand, and this read-scoping fix (all live, HTTP 200); DB migrations
+  `0016`–`0019` applied to the live stack. Everything merged + pushed to **`main`**.
 
 To make yourself admin after signing up:
 ```bash

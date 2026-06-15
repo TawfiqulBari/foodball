@@ -26,6 +26,8 @@ Chain**, and the winner eats free. ~6 weeks of fun, then archive.
   and revisable tournament long-shots whose value **decays** the later you set them.
 - **Server-authoritative scoring & pick-locking** — all in Postgres; the client never
   computes points, and the DB rejects a pick after kickoff even if the UI is bypassed.
+  Row-level security keeps your picks private until kickoff, then opens them to everyone
+  (so the stadium and the Food Chain expand can show who backed whom — no copying).
 - **Live everything** — a Realtime leaderboard (**The Food Chain**) with rank-change
   arrows where you can **tap any chef to expand their per-match predictions** (the team
   they backed, side markets, points — others' picks stay hidden until kickoff), live
