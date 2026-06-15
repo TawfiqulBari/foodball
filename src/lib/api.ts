@@ -40,9 +40,20 @@ export async function fetchMatches(roundKey: string): Promise<MatchRow[]> {
   return data ?? []
 }
 
-/** The current user's picks, keyed by `${match_id}:${market}`. */
+/** The signed-in user's id (from the locally-cached session — no network call). */
+async function currentUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession()
+  return data.session?.user.id ?? null
+}
+
+/** The current user's picks, keyed by `${match_id}:${market}`. MUST filter by
+ *  user_id explicitly: RLS reveals EVERYONE's picks after kickoff (for the Stadium),
+ *  so without this filter a started match returns all players' picks and the Map
+ *  collides on `match_id:market` — showing a random rival's pick as "yours". */
 export async function fetchMyPicks(): Promise<Map<string, MatchPick>> {
-  const { data, error } = await supabase.from('match_picks').select('*')
+  const uid = await currentUserId()
+  if (!uid) return new Map()
+  const { data, error } = await supabase.from('match_picks').select('*').eq('user_id', uid)
   if (error) throw error
   return new Map((data ?? []).map((p) => [`${p.match_id}:${p.market}`, p]))
 }
@@ -164,9 +175,17 @@ export async function fetchDecaySchedule(): Promise<DecayRow[]> {
 
 // ─── Round props (Top Chef / Clean Plate / Spice) ────────────────────────────
 
-/** The current user's round-prop picks for a round, keyed by prop. */
+/** The current user's round-prop picks for a round, keyed by prop. Filters by
+ *  user_id: RLS reveals everyone's round props after the round's first kickoff, so
+ *  without this the per-prop Map would collide on another player's pick. */
 export async function fetchMyRoundProps(roundKey: string): Promise<Map<Prop, RoundProp>> {
-  const { data, error } = await supabase.from('round_props').select('*').eq('round_key', roundKey)
+  const uid = await currentUserId()
+  if (!uid) return new Map()
+  const { data, error } = await supabase
+    .from('round_props')
+    .select('*')
+    .eq('round_key', roundKey)
+    .eq('user_id', uid)
   if (error) throw error
   return new Map((data ?? []).map((p) => [p.prop, p]))
 }
@@ -189,13 +208,18 @@ export async function submitRoundProp(
 // ─── Tournament-long picks (with decay + revision history) ───────────────────
 
 /** All of the current user's tournament picks (full revision history), newest
- *  first. The active pick per type is the first one of that type. */
+ *  first. The active pick per type is the first one of that type. Filters by
+ *  user_id: RLS reveals others' tourney picks once locked, so this must scope to
+ *  the signed-in user or the "my picks" list would include rivals' picks. */
 export async function fetchMyTourneyPicks(): Promise<TourneyPick[]> {
+  const uid = await currentUserId()
+  if (!uid) return []
   // Active pick per type = highest id (matches the server scorer, which ranks by
   // the immutable identity column, not the now-server-stamped created_at).
   const { data, error } = await supabase
     .from('tourney_picks')
     .select('*')
+    .eq('user_id', uid)
     .order('id', { ascending: false })
   if (error) throw error
   return data ?? []
