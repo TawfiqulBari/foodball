@@ -17,7 +17,8 @@ Chain**, and the winner eats free. ~6 weeks of fun, then archive.
 
 > Built milestone by milestone from [`plans/worldcup-league-claude-code-prompt.md`](plans/worldcup-league-claude-code-prompt.md).
 > **All milestones (M1–M5) are built and verified**, and it's been run live on the
-> real World Cup 2026 (48 teams, 72 group-stage fixtures from openfootball).
+> real World Cup 2026 (48 teams; all 72 group-stage fixtures + the Round of 32, imported
+> from openfootball — the knockout bracket fills in as teams are decided).
 
 ## What's inside
 

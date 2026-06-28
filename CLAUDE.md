@@ -16,8 +16,12 @@ authoritative override**. **Match picks lock strictly at kickoff** (`0016`, no g
 The **2026-06-14 session** added fairness hardening: the award pickers are seeded
 (`0017`), post-kickoff picks were **voided + recomputed** with a **Red Cards** screen
 (`0018`), and a 26-finding **logic audit** was remediated (`0019` — see
-`docs/logic-audit-2026-06-14.md`). Remaining is data wiring (knockout fixtures, a full
-squads sync), not features. When extending, keep verifying each milestone's acceptance
+`docs/logic-audit-2026-06-14.md`). The **2026-06-28 session** wired knockout support into
+`scripts/import-real-fixtures.mjs` and **imported the real Round of 32** (16 fixtures) as the
+group stage ended, corrected **every** knockout round's lock time from openfootball (fixing
+stale seed placeholders), and opened the R32 round specials with a 24h grace. Remaining is data
+wiring (the rest of the knockout bracket as teams resolve, a full squads sync), not features.
+When extending, keep verifying each milestone's acceptance
 checklist (spec §9) and re-running the test suites. See `session_status.md` for the
 latest run/verify snapshot + the live-ops details. The canonical source of truth remains
 `plans/worldcup-league-claude-code-prompt.md` — read it before extending. Brand assets
@@ -148,10 +152,13 @@ matches go live at kickoff (`foodball-auto-live`) and **self-settle from openfoo
 (`foodball-openfootball-sync`, `0014`), both token-free; **admin entry is the instant,
 authoritative override** (always wins). Sign-ups are gated to an email-domain allowlist
 (`0015`). **Match picks lock strictly at kickoff** — no late-launch grace for matches
-(`0016`); a started or live match is never pickable. Genuinely remaining: (1) **knockout
-fixtures** (`scripts/import-real-fixtures.mjs` did the 72 group games; knockouts are
-placeholders until teams are decided, and need ET/penalty winner logic — admin-entered for
-now); (2) a full **squads sync** for `players_catalog` — `0017` seeds a curated set of
+(`0016`); a started or live match is never pickable. Genuinely remaining: (1) **the rest of
+the knockout bracket** — `scripts/import-real-fixtures.mjs` now imports knockouts too, and the
+**Round of 32 is live** (16 real fixtures, imported 2026-06-28); R16/QF/SF/F fill in on a
+**re-run** as their teams resolve (placeholder bracket slots are skipped until then). Every
+knockout round's `first_kickoff` is already set from openfootball, so specials lock at the true
+kickoff — but knockout **results, `underdog_team`, and ET/penalty winners stay admin-entered**
+(`fb_settle_from_openfootball_json` is group-stage only); (2) a full **squads sync** for `players_catalog` — `0017` seeds a curated set of
 notable current players per team so the Golden Boot / Golden Glove / Best Young Player
 pickers work, but Clean Plate (per-round top scorers) and award **settlement** are still
 admin-entered; (3) optionally a `football-data.org` token for
@@ -224,8 +231,10 @@ The big picture that spans many files:
 Edge Functions live in `supabase/functions/<name>/` (`supabase functions deploy <name>`;
 `sync-fixtures` and `sync-results` exist today). Re-run the SQL acceptance test after any
 migration. The real WC2026 fixtures were imported by `scripts/import-real-fixtures.mjs`
-(`node scripts/import-real-fixtures.mjs > /tmp/f.sql` → pipe into the live DB); that script
-is also where you'd extend the knockout bracket. `scripts/demo-matches.sql` is the demo set.
+(`node scripts/import-real-fixtures.mjs > /tmp/f.sql` → pipe into the live DB); it imports group
+**and** knockout fixtures (real-team matches only — re-run to add R16/QF/SF/F as their teams are
+decided) and corrects each knockout round's `first_kickoff` from openfootball. `underdog_team`
+stays admin-designated (powers the upset ×2 + Spice prop). `scripts/demo-matches.sql` is the demo set.
 
 ## Gotchas worth knowing
 

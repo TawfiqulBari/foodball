@@ -1,6 +1,6 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-06-15 (fairness fixes, logic audit, Food Chain expand) · branch `main`_
+_Last updated: 2026-06-28 (knockout import wired up + Round of 32 imported) · branch `main`_
 
 ## TL;DR
 
@@ -13,7 +13,10 @@ match picks now **lock strictly at kickoff** (`0016`), the **award pickers are p
 (`0017`, 239 players), **post-kickoff picks were voided + scores recomputed** with a new
 **Red Cards** screen (`0018`), and a **26-finding logic audit** was remediated (`0019`).
 It also added a **Food Chain expand** (tap a chef → their per-match predictions, pick→team
-mapping pinned in one unit-tested helper). All merged to `main` and deployed.
+mapping pinned in one unit-tested helper). The **2026-06-28 session** wired knockout fixtures
+into the importer and pulled the real **Round of 32** (16 fixtures) as the group stage ended —
+correcting every knockout round's lock time from openfootball and reopening the R32 round
+specials with a 24h grace. All merged to `main` and deployed.
 Authoritative scoring/locking still lives in Postgres; the client never computes points.
 
 ## Live deployment
@@ -115,6 +118,27 @@ Foundation (earlier in the build):
 - **Deployed (3×)**: rebuilt + swapped the `foodball-web` container for the migrations work,
   the Food Chain expand, and this read-scoping fix (all live, HTTP 200); DB migrations
   `0016`–`0019` applied to the live stack. Everything merged + pushed to **`main`**.
+
+### This session (2026-06-28: knockout import + Round of 32 live)
+- **Knockout import wired up.** `scripts/import-real-fixtures.mjs` now imports knockout
+  fixtures from openfootball alongside the group stage: real-team matches only (placeholder
+  "W73"-style bracket slots are skipped until teams resolve — re-run to fill them in),
+  idempotent by `WC26-<round>-<num>`. It also sets **every** knockout round's `first_kickoff`
+  from openfootball regardless of team reveal, so round specials lock at the true kickoff.
+- **Round of 32 pulled.** Applied surgically to the live DB (zero churn to the 72 finished
+  group rows): **16 R32 fixtures** with real teams; South Africa v Canada flipped `live` at its
+  19:00 UTC kickoff, the other 15 open for picks. All five knockout lock times corrected from
+  the stale `16:00` seed placeholders (R32 19:00 Jun 28 · R16 17:00 Jul 4 · QF 20:00 Jul 9 ·
+  SF 19:00 Jul 14 · F 21:00 Jul 18).
+- **R32 round specials reopened.** The placeholder lock had slammed the specials shut ~3h
+  before the real kickoff (9 chefs had already picked). Fixed the lock time, then set a **24h
+  round-props grace** (`settings.round_props_grace_until`) so colleagues get a fair window.
+  Proven end-to-end (a rolled-back insert is accepted under grace, rejected without it); others'
+  picks stay hidden during grace (no copying). **Top Chef / Clean Plate** are pickable from the
+  239-player catalog; **Spice** needs admin-designated underdogs (same as the group stage).
+- **Knockout settlement stays admin-entered.** `fb_settle_from_openfootball_json` (`0014`)
+  filters `group ~ 'Group%'`, so it settles the group stage only — R32+ results go through
+  `fb_admin_set_result` (incl. ET/penalty winners). No new migration (a script change + data only).
 
 To make yourself admin after signing up:
 ```bash
@@ -218,8 +242,11 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
   overlays immediately; always wins over openfootball). A `football-data.org` token
   could add faster/live scores via the existing `sync-results` function, but its free
   tier may not cover WC2026.
-- **Knockout fixtures** — added once group standings decide the teams (the importer
-  only does the 72 group games; knockout slots are placeholders in openfootball).
+- **Knockout bracket** — `scripts/import-real-fixtures.mjs` now imports knockouts; the
+  **Round of 32 is live** (16 real fixtures, imported 2026-06-28). R16/QF/SF/F fill in on a
+  re-run as their teams resolve (placeholder slots skipped until then); every knockout round's
+  lock time is already set from openfootball. Knockout **results, underdogs, and ET/penalty
+  winners are admin-entered** (`fb_settle_from_openfootball_json` is group-only).
 - **Full squads sync** — `0017` seeded a curated 239-player `players_catalog` (all 48 teams)
   so the award pickers work; a complete per-squad sync (and Clean Plate / Top Chef settlement)
   is still admin-entered.
