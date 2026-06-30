@@ -35,8 +35,8 @@ Chain**, and the winner eats free. ~6 weeks of fun, then archive.
   scores, result-moment celebration overlays, an animated **Match Day** stadium (avatars
   in team kits on their picked side, cheering/crying on goals) with a live match clock,
   and a live commentary feed. Token-free **auto-live** (matches go live at kickoff) +
-  **auto-settle** (finished matches settle themselves from openfootball), with admin
-  entry as the instant, authoritative override. Match picks **lock strictly at kickoff**;
+  **auto-settle** (finished matches — group **and** knockout — settle themselves from
+  openfootball, penalty/ET winners included), with admin entry as the instant, authoritative override. Match picks **lock strictly at kickoff**;
   any prediction set after a match started is voided and shown on a **Red Cards** page.
 - **The fun layer** — DiceBear avatars, an installable PWA, a first-run "How to play"
   guide (+ a Remotion animated guide), and an optional Remotion **recap** video.

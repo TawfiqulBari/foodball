@@ -103,7 +103,12 @@ What exists now:
   locked, self-correcting round completion, `score_events` cleanup triggers on pick delete,
   a revision window that tolerates empty/finished rounds, `fb_ingest_result` never regressing a
   finished match, fail-CLOSED signup allowlist + email-change enforcement, and new admin RPCs
-  `fb_admin_remove_tournament_result` / `fb_admin_set_round_complete`).
+  `fb_admin_remove_tournament_result` / `fb_admin_set_round_complete`), and
+  `0020_knockout_openfootball_sync.sql` (extends the openfootball auto-settler to **knockouts**:
+  derives the advancing `winner` from penalties → ET → 90′ and records ET scores, so finished
+  R32/R16/QF/SF/F ties self-settle via the same `foodball-openfootball-sync` cron — the group
+  path is byte-for-byte unchanged, manual entry still wins, and an incomplete draw waits rather
+  than mis-settling).
   `supabase/seed.sql` seeds reference data +
   the §4.3 decay table. **Local Docker mounts the M2/M3 migrations as `01b_m2.sql` /
   `01c_m3.sql` (see compose); the CLI/hosted stack applies all of `supabase/migrations/`.**
@@ -157,8 +162,9 @@ the knockout bracket** — `scripts/import-real-fixtures.mjs` now imports knocko
 **Round of 32 is live** (16 real fixtures, imported 2026-06-28); R16/QF/SF/F fill in on a
 **re-run** as their teams resolve (placeholder bracket slots are skipped until then). Every
 knockout round's `first_kickoff` is already set from openfootball, so specials lock at the true
-kickoff — but knockout **results, `underdog_team`, and ET/penalty winners stay admin-entered**
-(`fb_settle_from_openfootball_json` is group-stage only); (2) a full **squads sync** for `players_catalog` — `0017` seeds a curated set of
+kickoff. Knockout **results now auto-settle from openfootball** (`0020` derives the advancing
+`winner` from penalties → ET → 90′); **`underdog_team` stays admin-designated** (the upset ×2 /
+Spice prop), and admin entry remains the instant override (always wins); (2) a full **squads sync** for `players_catalog` — `0017` seeds a curated set of
 notable current players per team so the Golden Boot / Golden Glove / Best Young Player
 pickers work, but Clean Plate (per-round top scorers) and award **settlement** are still
 admin-entered; (3) optionally a `football-data.org` token for

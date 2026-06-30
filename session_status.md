@@ -1,6 +1,6 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-06-28 (knockout import wired up + Round of 32 imported) · branch `main`_
+_Last updated: 2026-06-30 (knockout results auto-settle from openfootball, `0020`) · branch `main`_
 
 ## TL;DR
 
@@ -16,7 +16,9 @@ It also added a **Food Chain expand** (tap a chef → their per-match prediction
 mapping pinned in one unit-tested helper). The **2026-06-28 session** wired knockout fixtures
 into the importer and pulled the real **Round of 32** (16 fixtures) as the group stage ended —
 correcting every knockout round's lock time from openfootball and reopening the R32 round
-specials with a 24h grace. All merged to `main` and deployed.
+specials with a 24h grace. The **2026-06-30 session** then made knockout **results auto-settle**
+from openfootball (`0020`, deriving the advancing winner from penalties → ET → 90′) and settled
+the first four R32 ties. All merged to `main` and deployed.
 Authoritative scoring/locking still lives in Postgres; the client never computes points.
 
 ## Live deployment
@@ -136,9 +138,26 @@ Foundation (earlier in the build):
   Proven end-to-end (a rolled-back insert is accepted under grace, rejected without it); others'
   picks stay hidden during grace (no copying). **Top Chef / Clean Plate** are pickable from the
   239-player catalog; **Spice** needs admin-designated underdogs (same as the group stage).
-- **Knockout settlement stays admin-entered.** `fb_settle_from_openfootball_json` (`0014`)
-  filters `group ~ 'Group%'`, so it settles the group stage only — R32+ results go through
-  `fb_admin_set_result` (incl. ET/penalty winners). No new migration (a script change + data only).
+- **Knockout settlement (on the 28th) was admin-entered — automated on the 30th (see below).**
+  `fb_settle_from_openfootball_json` (`0014`) filtered `group ~ 'Group%'`, so R32+ results went
+  through `fb_admin_set_result`. No new migration this day (a script change + data only).
+
+### This session (2026-06-30: knockout results auto-settle)
+- **R32 ties were stuck "awaiting result."** `foodball-auto-live` flips knockout matches to
+  `live` at kickoff, but the openfootball auto-settle (`0014`) was group-stage only — so the four
+  finished R32 ties (RSA 0-1 CAN, BRA 2-1 JPN, GER 1-1 PAR pens, NED 1-1 MAR pens) never settled
+  and Match Day showed BRA 0-0 JPN "⏳ awaiting result".
+- **Settled the 4 now** (replicating `fb_admin_set_result`: UPDATE + `fb_score_match`), recording
+  ET scores + the advancing `winner`. The scorer's winner-precedence branch means the W/D/W
+  outcome rewards the team that **advanced** (Paraguay/Morocco), not a 90-min draw — 124
+  score-events / 425 points written.
+- **Durable fix `0020_knockout_openfootball_sync.sql`** (applied + registered live): extends the
+  openfootball settler to knockouts — derives the advancing winner from **penalties → ET → 90′**,
+  records ET scores, keeps the group path byte-for-byte, manual entry still wins, idempotent, and
+  an incomplete draw waits rather than mis-settling. Tested in rolled-back transactions
+  (winner-from-pens/ET/90′, manual-wins, idempotency, incomplete). The existing 10-min
+  `foodball-openfootball-sync` cron now self-settles R32+ going forward — a real run returned `0`
+  (the 4 manual ties skipped, the rest not yet scored upstream).
 
 To make yourself admin after signing up:
 ```bash
@@ -245,8 +264,9 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
 - **Knockout bracket** — `scripts/import-real-fixtures.mjs` now imports knockouts; the
   **Round of 32 is live** (16 real fixtures, imported 2026-06-28). R16/QF/SF/F fill in on a
   re-run as their teams resolve (placeholder slots skipped until then); every knockout round's
-  lock time is already set from openfootball. Knockout **results, underdogs, and ET/penalty
-  winners are admin-entered** (`fb_settle_from_openfootball_json` is group-only).
+  lock time is already set from openfootball. Knockout **results auto-settle** from openfootball
+  (`0020`, advancing winner from penalties → ET → 90′); **underdogs stay admin-designated** (the
+  upset ×2 / Spice prop), and admin entry is the instant override (always wins).
 - **Full squads sync** — `0017` seeded a curated 239-player `players_catalog` (all 48 teams)
   so the award pickers work; a complete per-squad sync (and Clean Plate / Top Chef settlement)
   is still admin-entered.
@@ -260,14 +280,15 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
 
 ## Notes for the next session
 
-- Migrations are additive and numbered (`0001`→`0019`); never edit an applied one in
+- Migrations are additive and numbered (`0001`→`0020`); never edit an applied one in
   place. Apply new ones to the live CLI stack with
   `docker exec -i supabase_db_foodball psql -U postgres -d postgres -f -` and register
   the version in `supabase_migrations.schema_migrations`.
 - **pg_cron jobs** on the live stack: `foodball-sync-results` (every 5m, inert without
   a token), `foodball-auto-live` (every 1m, token-free live flip), `foodball-live-atmosphere`
   (every 2m, brand-voice colour lines for live matches), `foodball-openfootball-sync`
-  (every 10m, token-free final-score auto-settle — `0014`, needs the `http` extension).
+  (every 10m, token-free final-score auto-settle — `0014`, **extended to knockouts by `0020`**;
+  needs the `http` extension).
 - **Grace windows** share one `public.settings` row (singleton). Each
   `fb_*_grace_active()` reads only its own column; admin setters are `fb_admin_set_*_grace`.
   As of `0016` the **match-pick** grace is inert (the lock ignores it — picks lock at kickoff);
@@ -278,5 +299,6 @@ full procedures, and `CLAUDE.md` for architecture + conventions.
   `decay_schedule` so they can't drift — re-run **both** Vitest and the SQL suites after
   touching either.
 - `vite-plugin-pwa` needs `workbox-build` kept on **7.1.x** (declared `^7.1.0`; 7.3+ breaks its ESM `require`).
-- **pg_cron jobs** now also include nothing new from `0016`–`0019` (those are schema/logic, not cron).
-  The void was a one-off (`scripts/void-post-kickoff-picks.sql`), not scheduled.
+- **pg_cron jobs** are unchanged by `0016`–`0020` (schema/logic only); `0020` re-defines the
+  settler the existing `foodball-openfootball-sync` cron already calls, so it now covers knockouts
+  with no new job. The void was a one-off (`scripts/void-post-kickoff-picks.sql`), not scheduled.
