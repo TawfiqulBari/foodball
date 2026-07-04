@@ -13,6 +13,8 @@ export const MARKET_POINTS = {
 
 export const UPSET_MULTIPLIER = 2 // outcome ×2 when the picked winner is the underdog
 
+export const WRONG_OUTCOME_PENALTY = 5 // points OFF for a wrong outcome pick (Round of 16 onward)
+
 export const PROP_POINTS = {
   spice: 20, // Spice of the Round — underdog upset
   top_chef: 15, // Top Chef — round top scorer

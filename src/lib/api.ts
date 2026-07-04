@@ -277,6 +277,30 @@ export async function adminSetRoundPropsGrace(until: string | null): Promise<voi
   if (error) throw error
 }
 
+export interface TwoPhaseConfig {
+  enabled: boolean
+  groupWeight: number
+  knockoutWeight: number
+}
+
+/** Two-phase scoring config (migration 0022). When enabled, the leaderboard total
+ *  is a 0–100 weighted blend of a frozen group-stage score and a live knockout
+ *  score; when off, it's the raw cumulative points. Weights are numeric in PG, so
+ *  they arrive as strings — coerce them. */
+export async function fetchTwoPhase(): Promise<TwoPhaseConfig> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('two_phase_enabled, group_weight, knockout_weight')
+    .eq('id', true)
+    .maybeSingle()
+  if (error) throw error
+  return {
+    enabled: data?.two_phase_enabled ?? false,
+    groupWeight: Number(data?.group_weight ?? 0.3),
+    knockoutWeight: Number(data?.knockout_weight ?? 0.7),
+  }
+}
+
 // Match picks lock at kickoff (no grace) — see migration 0016. The match-pick
 // grace RPC/column remain in the DB for back-compat but are inert, so there is
 // no client wrapper for them anymore.

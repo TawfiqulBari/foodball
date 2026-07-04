@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { LayoutGroup, motion, useReducedMotion } from 'framer-motion'
-import { fetchAllMatches, fetchLeaderboard, fetchMatchPicksForUser, fetchTeams } from '../lib/api'
+import { fetchAllMatches, fetchLeaderboard, fetchMatchPicksForUser, fetchTeams, fetchTwoPhase, type TwoPhaseConfig } from '../lib/api'
 import { supabase } from '../lib/supabase'
 import type { LeaderboardRow, MatchPick, MatchRow, Team } from '../lib/database.types'
 import { pickLabel } from '../lib/matchField'
@@ -30,6 +30,7 @@ export function Leaderboard() {
   const [loading, setLoading] = useState(true)
   const [live, setLive] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [twoPhase, setTwoPhase] = useState<TwoPhaseConfig | null>(null)
   // Predictions expand: reference data + a lazy per-user pick cache.
   const [teams, setTeams] = useState<Map<number, Team>>(new Map())
   const [matches, setMatches] = useState<MatchRow[]>([])
@@ -46,6 +47,9 @@ export function Leaderboard() {
         .catch((e) => alive && setErr(String(e)))
         .finally(() => alive && setLoading(false))
     void refresh()
+    void fetchTwoPhase()
+      .then((t) => alive && setTwoPhase(t))
+      .catch(() => {})
     // Reference data for the predictions expand (teams + every match).
     void Promise.all([fetchTeams(), fetchAllMatches()])
       .then(([t, m]) => {
@@ -118,6 +122,7 @@ export function Leaderboard() {
       isSelf={r.user_id === myId}
       matches={matches}
       teams={teams}
+      showBreakdown={twoPhase?.enabled ?? false}
     />
   )
 
@@ -132,6 +137,15 @@ export function Leaderboard() {
         )}
       </h1>
       <p className="mt-0.5 font-body text-xs text-muted-foreground">Tap a chef to see their predictions.</p>
+      {twoPhase?.enabled && (
+        <div className="mt-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
+          <p className="text-xs font-body text-foreground">
+            🍽️ <span className="font-bold">Fresh from the Round of 16.</span> Scores are now out of 100 — your
+            group form ({Math.round(twoPhase.groupWeight * 100)}%) plus a fresh knockout run
+            ({Math.round(twoPhase.knockoutWeight * 100)}%). A wrong outcome now costs 5. See The Menu for details.
+          </p>
+        </div>
+      )}
       {err && <p className="text-destructive text-sm font-body">{err}</p>}
       {loading ? (
         <p className="mt-8 text-center font-body text-muted-foreground">Counting the courses…</p>
@@ -169,6 +183,7 @@ function Row({
   isSelf,
   matches,
   teams,
+  showBreakdown,
 }: {
   row: LeaderboardRow
   me: boolean
@@ -184,6 +199,7 @@ function Row({
   isSelf: boolean
   matches: MatchRow[]
   teams: Map<number, Team>
+  showBreakdown: boolean
 }) {
   return (
     <motion.li
@@ -215,7 +231,14 @@ function Row({
         </button>
         <RankDelta delta={row.rank_delta} />
         <span className="text-xs text-muted-foreground">{row.outcome_hits} ✓</span>
-        <span className="w-8 text-right font-display text-lg">{row.total}</span>
+        <span className="flex w-12 flex-col items-end leading-none">
+          <span className="font-display text-lg">{row.total}</span>
+          {showBreakdown && (
+            <span className="mt-0.5 text-[10px] font-body font-normal text-muted-foreground" title="group score · knockout score (each of 100)">
+              g{row.group_score}·k{row.knockout_score}
+            </span>
+          )}
+        </span>
         {canPin && (
           <button
             type="button"
@@ -310,7 +333,7 @@ function PredictionsPanel({
                     title={p.market}
                   >
                     {pickLabel(p.market, p.selection, m, teams)}
-                    {finished && (p.points_awarded != null) && (hit ? ` +${p.points_awarded}` : ' +0')}
+                    {finished && p.points_awarded != null && (hit ? ` +${p.points_awarded}` : ` ${p.points_awarded < 0 ? p.points_awarded : '+0'}`)}
                   </span>
                 )
               })}

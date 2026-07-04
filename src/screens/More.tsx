@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
-import { fetchDecaySchedule } from '../lib/api'
+import { fetchDecaySchedule, fetchTwoPhase, type TwoPhaseConfig } from '../lib/api'
 import type { DecayRow } from '../lib/database.types'
 import {
   DECAY_BUCKETS,
@@ -8,17 +8,22 @@ import {
   PROP_POINTS,
   TOURNEY_PICK_LABELS,
   UPSET_MULTIPLIER,
+  WRONG_OUTCOME_PENALTY,
 } from '../lib/scoring'
 import { COPY } from '../lib/copy'
 
 export function More() {
   const { profile, signOut } = useAuth()
   const [decay, setDecay] = useState<DecayRow[]>([])
+  const [twoPhase, setTwoPhase] = useState<TwoPhaseConfig | null>(null)
 
   useEffect(() => {
     fetchDecaySchedule()
       .then(setDecay)
       .catch(() => setDecay([]))
+    fetchTwoPhase()
+      .then(setTwoPhase)
+      .catch(() => setTwoPhase(null))
   }, [])
 
   // Group decay rows by pick_type for the grid.
@@ -48,7 +53,11 @@ export function More() {
           <li>Both teams to score — <strong>{MARKET_POINTS.btts} pts</strong></li>
           <li>Total goals over/under 2.5 — <strong>{MARKET_POINTS.over_under} pts</strong></li>
           <li>Picked the underdog and they win — outcome <strong>×{UPSET_MULTIPLIER}</strong> ({COPY.spice})</li>
-          <li>Wrong pick — <strong>0 pts</strong> ({COPY.burntToast}); no pick — {COPY.skippedLunch}, no penalty</li>
+          <li>
+            Wrong <strong>outcome</strong> — <strong>−{WRONG_OUTCOME_PENALTY} pts</strong> ({COPY.burntToast}),
+            from the Round of 16 onward; other wrong picks — <strong>0 pts</strong>; no pick — {COPY.skippedLunch},
+            no penalty
+          </li>
         </ul>
 
         <h3 className="mt-3 font-display text-lg">Per round</h3>
@@ -57,6 +66,18 @@ export function More() {
           <li>{COPY.topChef} (round top scorer) — <strong>{PROP_POINTS.top_chef} pts</strong></li>
           <li>{COPY.cleanPlate} (clean-sheet keeper) — <strong>{PROP_POINTS.clean_plate} pts</strong></li>
         </ul>
+
+        {twoPhase?.enabled && (
+          <>
+            <h3 className="mt-3 font-display text-lg">Two-phase scoring — fresh from the Round of 16</h3>
+            <p className="mt-1 text-sm text-muted-foreground">The group stage is frozen; your standing is now a score out of 100:</p>
+            <ul className="mt-1 text-sm list-disc list-inside space-y-1">
+              <li>Group + R32 form, scaled to 100 — worth <strong>{Math.round(twoPhase.groupWeight * 100)}%</strong></li>
+              <li>Fresh Round of 16 → Final run, scaled to 100 — worth <strong>{Math.round(twoPhase.knockoutWeight * 100)}%</strong></li>
+              <li>They blend live, so a strong knockout run can still win it — the group table is only a head start.</li>
+            </ul>
+          </>
+        )}
 
         <h3 className="mt-3 font-display text-lg">Tournament long shots (decay)</h3>
         <p className="text-xs text-muted-foreground">The later you set a pick, the less it pays.</p>

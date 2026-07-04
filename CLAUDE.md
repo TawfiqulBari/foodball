@@ -108,7 +108,15 @@ What exists now:
   derives the advancing `winner` from penalties → ET → 90′ and records ET scores, so finished
   R32/R16/QF/SF/F ties self-settle via the same `foodball-openfootball-sync` cron — the group
   path is byte-for-byte unchanged, manual entry still wins, and an incomplete draw waits rather
-  than mis-settling).
+  than mis-settling), and `0021_wrong_outcome_penalty.sql` (a wrong W/D/W **outcome** pick costs
+  **−5**, admin-toggled via `settings.wrong_outcome_penalty` and gated to rounds ≥
+  `settings.penalty_from_round` — set to **R16**, so finished rounds are never re-scored; side
+  markets/long-shots untouched; missed picks unaffected), and `0022_two_phase_leaderboard.sql`
+  (a **two-phase weighted leaderboard**: group+R32 is frozen (`phase1_frozen`) and normalized to
+  100, knockouts score fresh and normalize to 100 **live**, and `total` becomes
+  `group_weight·group100 + knockout_weight·knockout100` (default **0.30/0.70**) — behind
+  `settings.two_phase_enabled`; OFF reproduces the old raw-points board exactly; view exposes
+  `group_score`/`knockout_score`/`raw_total` for the UI breakdown).
   `supabase/seed.sql` seeds reference data +
   the §4.3 decay table. **Local Docker mounts the M2/M3 migrations as `01b_m2.sql` /
   `01c_m3.sql` (see compose); the CLI/hosted stack applies all of `supabase/migrations/`.**

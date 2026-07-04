@@ -1,6 +1,6 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-06-30 (knockout results auto-settle from openfootball, `0020`) · branch `main`_
+_Last updated: 2026-07-04 (R16 live; two-phase "factor of 100" scoring + wrong-outcome penalty) · branch `main`_
 
 ## TL;DR
 
@@ -158,6 +158,25 @@ Foundation (earlier in the build):
   (winner-from-pens/ET/90′, manual-wins, idempotency, incomplete). The existing 10-min
   `foodball-openfootball-sync` cron now self-settles R32+ going forward — a real run returned `0`
   (the 4 manual ties skipped, the rest not yet scored upstream).
+
+### This session (2026-07-04: R16 live + two-phase scoring)
+- **Round of 16 imported** (8 fixtures, real teams) as R32 completed; every knockout `first_kickoff`
+  already correct. **Spice activated for the knockouts**: `underdog_team` set on all 8 R16 ties by
+  FIFA rank (the lower-ranked side) — the first time underdogs have been used all tournament (they
+  were dormant MD1–R32). QF/SF/F underdogs get set when those teams resolve; R32 left untouched.
+- **Wrong-outcome penalty** (`0021`): a wrong W/D/W pick now costs **−5**, from **R16 onward** only
+  (gated by `settings.penalty_from_round`, so MD1–R32 are never re-scored), admin-toggleable via
+  `settings.wrong_outcome_penalty`. Side markets, long-shots, and missed picks are unaffected.
+- **Two-phase "factor of 100" leaderboard** (`0022`): the group+R32 table is **frozen**
+  (`phase1_frozen`, snapshot taken at end of R32) and normalized to a 0–100 group score; the
+  knockouts score **fresh** and normalize to 0–100 **live**; the leaderboard `total` is the weighted
+  blend `0.30·group + 0.70·knockout` (weights admin-tunable). A strong R16→Final run overturns the
+  board — verified with a rolled-back simulation (a mid-pack chef with a good knockout jumps to #1).
+  Behind `settings.two_phase_enabled`; OFF reproduces the raw-points board exactly.
+- **Frontend deployed**: leaderboard shows the 0–100 score + a group/knockout breakdown + an
+  explainer banner; The Menu documents the penalty + the two-phase blend; match cards show "Burnt
+  Toast −5". Rebuilt the `foodball-web` container (live, HTTP 200) and flipped both flags on before
+  the 17:00 UTC R16 kickoff; an in-app commentary notice announced the new format.
 
 To make yourself admin after signing up:
 ```bash

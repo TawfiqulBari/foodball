@@ -161,7 +161,9 @@ export function MatchCard({
         <div className="mt-3 border-t border-border pt-2 text-center text-sm">
           {outcomePick ? (
             <p className={`font-display ${outcomeCorrect ? 'text-lettuce' : 'text-destructive'}`}>
-              {outcomeCorrect ? `${COPY.chefsKiss}! +${outcomePick.points_awarded}` : `${COPY.burntToast}. +0`}
+              {outcomeCorrect
+                ? `${COPY.chefsKiss}! +${outcomePick.points_awarded}`
+                : `${COPY.burntToast}. ${(outcomePick.points_awarded ?? 0) < 0 ? outcomePick.points_awarded : '+0'}`}
             </p>
           ) : (
             <p className="font-body text-muted-foreground">{COPY.skippedLunch}</p>

@@ -121,6 +121,11 @@ export interface LeaderboardRow {
   outcome_hits: number
   rank: number
   rank_delta: number
+  // Two-phase scoring (migration 0022): the 0–100 normalized components behind
+  // `total` when two_phase_enabled, plus the raw cumulative points for reference.
+  group_score: number
+  knockout_score: number
+  raw_total: number
 }
 
 export interface RedCard {
@@ -185,6 +190,11 @@ export interface Database {
           longshot_grace_until: string | null
           round_props_grace_until: string | null
           match_picks_grace_until: string | null
+          two_phase_enabled: boolean
+          group_weight: number
+          knockout_weight: number
+          wrong_outcome_penalty: number
+          penalty_from_round: string | null
         }
         Insert: {
           id?: boolean
@@ -196,6 +206,11 @@ export interface Database {
           longshot_grace_until: string | null
           round_props_grace_until: string | null
           match_picks_grace_until: string | null
+          two_phase_enabled: boolean
+          group_weight: number
+          knockout_weight: number
+          wrong_outcome_penalty: number
+          penalty_from_round: string | null
         }>
       }
       signup_allowed_domains: {
