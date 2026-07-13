@@ -1,6 +1,6 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-07-04 (R16 live; two-phase "factor of 100" scoring + wrong-outcome penalty) · branch `main`_
+_Last updated: 2026-07-13 (SF live; QF written off; knockout fixtures now self-import) · branch `main`_
 
 ## TL;DR
 
@@ -177,6 +177,25 @@ Foundation (earlier in the build):
   explainer banner; The Menu documents the penalty + the two-phase blend; match cards show "Burnt
   Toast −5". Rebuilt the `foodball-web` container (live, HTTP 200) and flipped both flags on before
   the 17:00 UTC R16 kickoff; an in-app commentary notice announced the new format.
+
+### This session (2026-07-13: semis live, QF written off, fixture import automated)
+- **The quarter-finals were MISSED.** QF was played Jul 9–11 but never imported, so it never existed
+  for players (0 matches, 0 picks, no specials). Owner's decision: **skip QF entirely** — nobody
+  picked it, so nobody gained or lost. The knockout phase is **R16 + SF + Final**. A played round is
+  never retro-imported for scoring (results are public → picks would be hindsight).
+- **Semi-finals imported + open**: 🇫🇷 FRA v ESP 🇪🇸 (Jul 14, 19:00 UTC) and 🏴 ENG v ARG 🇦🇷
+  (Jul 15, 19:00 UTC); SF `first_kickoff` set to the true kickoff; underdogs designated (ESP, ENG)
+  so Spice + the upset ×2 are live. Match picks + all three specials verified pickable.
+- **Two-phase scoring is working as designed**: after R16, **Fahad** (was 4th) leads at **98** and
+  **kaife.adon** — **11th** in the group stage — is **2nd at 79**. The knockout run genuinely decides it.
+- **`0023` — knockout fixtures now self-import** (the fix for the QF hole): pg_cron
+  `foodball-knockout-fixtures` (every 15 min) fetches openfootball in-DB and imports each knockout
+  fixture the moment its teams resolve — setting the round's true `first_kickoff` **and** the
+  `underdog_team` (lower FIFA rank) automatically. It **never retro-adds a played round** (verified:
+  it refuses to add the QF) and never disturbs a live/finished match. Verified by simulation: once the
+  semis finish, the **3rd-place + Final import themselves**, with lock times and underdogs, no admin.
+  `teams.fifa_rank` was only filled for 10/48 teams (and stale), so the current ranks for the four
+  contenders were set — otherwise the auto-underdog would silently no-op.
 
 To make yourself admin after signing up:
 ```bash
