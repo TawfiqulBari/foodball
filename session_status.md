@@ -1,6 +1,6 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-07-13 (SF live; QF written off; knockout fixtures now self-import) · branch `main`_
+_Last updated: 2026-07-13 (SF live; QF written off; fixtures + Top Chef now self-settle) · branch `main`_
 
 ## TL;DR
 
@@ -196,6 +196,28 @@ Foundation (earlier in the build):
   semis finish, the **3rd-place + Final import themselves**, with lock times and underdogs, no admin.
   `teams.fifa_rank` was only filled for 10/48 teams (and stale), so the current ranks for the four
   contenders were set — otherwise the auto-underdog would silently no-op.
+
+- **`0024` — Top Chef now settles itself** (it had NEVER paid out: `round_top_scorers` is
+  admin-entered and was never populated, so Top Chef scored **0 in every round** — players were
+  picking a prop that could not score). openfootball publishes goalscorers (`goals1`/`goals2`), so
+  pg_cron `foodball-top-scorers` (every 20 min) derives each COMPLETE round's top scorer(s) in-DB,
+  fills `round_top_scorers` and re-settles the round. Own goals excluded; ties honoured (all
+  co-top-scorers inserted); names matched accent-insensitively (`fb_name_key`) against
+  `players_catalog`, and an unresolvable scorer is skipped (safe: the picker only offers catalog
+  players, so an unpickable name could never have been chosen). Verified by simulation: Mbappé
+  scores 2 in the SF → everyone who picked him gets **+15**, a wrong pick gets 0.
+  Backfilled MD1–MD3/R32/R16: nobody had picked a real top scorer (all Messi/Ronaldo/Mbappé vs the
+  actual Haaland/Bellingham/Kane), so **no standings changed** — no retroactive advantage.
+- **`0025` — two-phase split now derived from the LEDGER (bug fix).** `0022` computed
+  `knockout = raw_total − phase1_frozen`, i.e. "anything not in the end-of-R32 snapshot is a
+  knockout point". That held only while group scores never changed again — but `0024`'s re-settle
+  credited **+170** of Clean Plate points that had never been awarded for MD1–MD3, and because they
+  weren't in the snapshot they were counted as **knockout** points (Zoyaza 71→79, shahriar 54→63,
+  reordering the board). The leaderboard now tags every `score_event` with the phase of the round it
+  was earned in (`match_picks`→`matches.round_key`, `round_props`→`round_props.round_key`,
+  long-shots→group) and sums per phase, so a late correction to any group round stays in the group
+  phase forever. Regression-tested: re-settling MD2 moves **no** knockout score. `phase1_frozen` is
+  retained for reference/audit but is no longer load-bearing.
 
 To make yourself admin after signing up:
 ```bash
