@@ -25,6 +25,7 @@ import type {
 } from '../lib/database.types'
 import { MatchCard } from '../components/MatchCard'
 import { RoundPropsCard } from '../components/RoundPropsCard'
+import { FinalScoreCard } from '../components/FinalScoreCard'
 import { COPY } from '../lib/copy'
 
 export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
@@ -153,8 +154,12 @@ export function Matches({ onRoundComplete }: { onRoundComplete?: () => void }) {
     return m
   }
 
+  // Tournament over → the final score card leads the landing page.
+  const tournamentOver = rounds.some((r) => r.key === 'F' && r.completed)
+
   return (
     <div className="px-4 pt-3">
+      {tournamentOver && <FinalScoreCard />}
       <RoundChips rounds={rounds} active={activeRound} onChange={setActiveRound} />
       {err && <p className="text-destructive text-sm font-body">{err}</p>}
       {loading ? (

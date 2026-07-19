@@ -1,3 +1,4 @@
+import { FinalScoreCard } from '../components/FinalScoreCard'
 import { COPY } from '../lib/copy'
 
 const STEPS: { icon: string; title: string; body: React.ReactNode }[] = [
@@ -69,6 +70,8 @@ const STEPS: { icon: string; title: string; body: React.ReactNode }[] = [
 export function Guide({ firstRun = false, onStart }: { firstRun?: boolean; onStart?: () => void }) {
   return (
     <div className="px-4 pt-3 pb-28">
+      {/* Tournament over → the final table leads the landing page (self-gating). */}
+      <FinalScoreCard />
       <h1 className="font-display text-2xl text-primary">How FoodBall works</h1>
       <p className="font-body text-sm text-muted-foreground">
         Predict the World Cup, earn points (never money), and feast. Here’s the 60-second tour.

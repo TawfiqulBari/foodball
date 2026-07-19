@@ -128,6 +128,16 @@ export interface LeaderboardRow {
   raw_total: number
 }
 
+/** Per-player, per-round points (view `round_scorecard`, migration 0027).
+ *  `round_key` is a round key, or 'LONG' for tournament long-shot payouts. */
+export interface RoundScoreRow {
+  user_id: string
+  round_key: string
+  points: number
+  hits: number
+  scored_picks: number
+}
+
 export interface RedCard {
   id: number
   user_id: string
@@ -221,6 +231,7 @@ export interface Database {
     }
     Views: {
       leaderboard: { Row: LeaderboardRow }
+      round_scorecard: { Row: RoundScoreRow }
     }
     Functions: {
       fb_admin_set_result: {

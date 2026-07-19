@@ -12,6 +12,7 @@ import type {
   Prop,
   RedCard,
   RoundProp,
+  RoundScoreRow,
   RoundRow,
   Team,
   TourneyPick,
@@ -161,6 +162,22 @@ export async function adminPostCommentary(
 
 export async function fetchPlayers(): Promise<PlayerCatalog[]> {
   const { data, error } = await supabase.from('players_catalog').select('*').order('name')
+  if (error) throw error
+  return data ?? []
+}
+
+/** Per-player, per-round points (migration 0027) for the public final score card.
+ *  `round_key` is a real round, or 'LONG' for the tournament long-shot payouts. */
+export async function fetchRoundScorecard(): Promise<RoundScoreRow[]> {
+  const { data, error } = await supabase.from('round_scorecard').select('*')
+  if (error) throw error
+  return data ?? []
+}
+
+/** EVERY player's round specials. RLS reveals others' round props only once the round
+ *  has locked — every round is complete now, so this is the full picture. */
+export async function fetchAllRoundProps(): Promise<RoundProp[]> {
+  const { data, error } = await supabase.from('round_props').select('*')
   if (error) throw error
   return data ?? []
 }

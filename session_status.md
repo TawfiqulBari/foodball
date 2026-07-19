@@ -1,6 +1,6 @@
 # FoodBall — Session Status
 
-_Last updated: 2026-07-13 (SF live; QF written off; fixtures + Top Chef now self-settle) · branch `main`_
+_Last updated: 2026-07-19 (TOURNAMENT COMPLETE — final table published) · branch `main`_
 
 ## TL;DR
 
@@ -218,6 +218,28 @@ Foundation (earlier in the build):
   long-shots→group) and sums per phase, so a late correction to any group round stays in the group
   phase forever. Regression-tested: re-settling MD2 moves **no** knockout score. `phase1_frozen` is
   retained for reference/audit but is no longer load-bearing.
+
+### FINAL (2026-07-19: World Cup over, final table published)
+- **🥇 Fahad 98 · 🥈 Zoyaza Islam Mighty 92 · 🥉 Emon 86.** Fahad was 4th at the group freeze and won
+  on the knockout phase; Emon led the group stage outright (1280) and finished 3rd — the two-phase
+  reset did exactly what it was designed to do.
+- **Final settled manually** (`scripts/finalize-tournament-2026.sql`): openfootball never published
+  the Final, so Spain 1-0 Argentina (a.e.t., Ferran Torres 106') was entered by hand; manual entry is
+  authoritative. England beat France 6-4 for third (auto-settled).
+- **Tournament long-shots settled** — they had never been (admin-entered by design), leaving 38 picks
+  at 0. Champion = Spain, and **nobody picked Spain**, so the 100-pt prize paid out to no one; the
+  title was decided by the finalist picks (Emon/Fahad +40, asif +30, shahriar +15). Golden Boot =
+  Mbappé (10 goals in the league's openfootball dataset), Golden Glove = Unai Simón, Young Player =
+  Pau Cubarsí (added to the catalog so the result is recorded by identity), total goals = 301.
+- **`0026` — long-shots count in the KNOCKOUT phase** (owner's call). `0025` had parked them in the
+  group phase, which was inert while they were unsettled but would have retroactively inflated the
+  *frozen* group score and rescaled it, pushing down players who made no long-shot picks. This choice
+  decided the title: long-shots→group crowns Zoyaza, →knockout crowns Fahad.
+- **`0027` + `FinalScoreCard`** — public end-of-tournament score card on the landing page: a podium
+  with the top-3 avatars (2|1|3, champion centre + tallest), the full table as `grp/100 · ko/100 ·
+  FINAL`, and per chef (expandable) their **points per round** and **the round specials they chose**.
+  New `round_scorecard` view attributes every score_event to the round it was earned in ('LONG' for
+  long-shots). All of it is public — every round has locked, so RLS already reveals every pick.
 
 To make yourself admin after signing up:
 ```bash
